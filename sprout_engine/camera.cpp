@@ -64,6 +64,4 @@ void Camera::process_mouse_movement(float xoffset, float yoffset)
 	new_dir.z = std::sin(radians(yaw)) * std::cos(radians(pitch));
 
 	dir = normalize(new_dir);
-
-	fprintf(stderr, "pitch: %lf yaw: %lf \n", pitch, yaw);
 }

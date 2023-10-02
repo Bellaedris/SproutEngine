@@ -78,6 +78,12 @@
     <ClCompile Include="sprout_engine\camera.cpp">
       <Filter>Fichiers sources\SproutEngine</Filter>
     </ClCompile>
+    <ClCompile Include="sprout_engine\mesh.cpp">
+      <Filter>Fichiers sources\SproutEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="sprout_engine\model.cpp">
+      <Filter>Fichiers sources\SproutEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sprout_engine\SproutApp.h">
@@ -126,6 +132,12 @@
       <Filter>Fichiers d%27en-tête\SproutEngine</Filter>
     </ClInclude>
     <ClInclude Include="sprout_engine\camera.h">
+      <Filter>Fichiers d%27en-tête\SproutEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="sprout_engine\mesh.h">
+      <Filter>Fichiers d%27en-tête\SproutEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="sprout_engine\model.h">
       <Filter>Fichiers d%27en-tête\SproutEngine</Filter>
     </ClInclude>
   </ItemGroup>

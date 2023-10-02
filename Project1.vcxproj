@@ -24,7 +24,7 @@
     <ProjectGuid>{84566a18-cb8d-4ce5-bc3d-9b21d153c8de}</ProjectGuid>
     <RootNamespace>Project1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Project1</ProjectName>
+    <ProjectName>SproutEngine</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -124,7 +124,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -153,6 +153,8 @@
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="sprout_engine\camera.cpp" />
+    <ClCompile Include="sprout_engine\mesh.cpp" />
+    <ClCompile Include="sprout_engine\model.cpp" />
     <ClCompile Include="sprout_engine\shader.cpp" />
     <ClCompile Include="sprout_engine\SproutApp.cpp" />
     <ClCompile Include="sprout_engine\stb_image.cpp" />
@@ -172,6 +174,8 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="sprout_engine\camera.h" />
+    <ClInclude Include="sprout_engine\mesh.h" />
+    <ClInclude Include="sprout_engine\model.h" />
     <ClInclude Include="sprout_engine\shader.h" />
     <ClInclude Include="sprout_engine\SproutApp.h" />
     <ClInclude Include="sprout_engine\stb_image.h" />
