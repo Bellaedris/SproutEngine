@@ -148,5 +148,11 @@
     <None Include="data\shaders\default_fragment_shader.glsl">
       <Filter>Fichiers sources\data</Filter>
     </None>
+    <None Include="data\shaders\debug_lines_fragment.glsl">
+      <Filter>Fichiers sources\data</Filter>
+    </None>
+    <None Include="data\shaders\debug_lines_vertex.glsl">
+      <Filter>Fichiers sources\data</Filter>
+    </None>
   </ItemGroup>
 </Project>

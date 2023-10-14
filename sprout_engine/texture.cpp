@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Texture::Texture(const char* path, GLenum clamp_method, GLenum filtering_method)
+Texture::Texture(const char* path, std::string type, GLenum clamp_method, GLenum filtering_method) : type(type), path(path)
 {
 	int width, height, nbChan;
 	stbi_set_flip_vertically_on_load(true);
@@ -16,7 +16,7 @@ Texture::Texture(const char* path, GLenum clamp_method, GLenum filtering_method)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering_method);
 
-	GLenum format;
+	GLenum format = GL_RGBA;
 	switch (nbChan)
 	{
 	case 3:
@@ -31,6 +31,7 @@ Texture::Texture(const char* path, GLenum clamp_method, GLenum filtering_method)
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
+		std::cout << "loaded texture " << path << std::endl;
 	}
 	else
 	{

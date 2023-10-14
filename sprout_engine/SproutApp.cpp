@@ -77,6 +77,10 @@ void SproutApp::prerender()
         cam.process_input(LEFT, delta_time);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cam.process_input(RIGHT, delta_time);
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        cam.process_input(UP, delta_time);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        cam.process_input(DOWN, delta_time);
 
     //mouse
     if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS)
