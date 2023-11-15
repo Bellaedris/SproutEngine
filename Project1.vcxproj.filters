@@ -84,6 +84,12 @@
     <ClCompile Include="sprout_engine\model.cpp">
       <Filter>Fichiers sources\SproutEngine</Filter>
     </ClCompile>
+    <ClCompile Include="sprout_engine\bounds.h">
+      <Filter>Fichiers d%27en-tête\SproutEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="sprout_engine\bounds.cpp">
+      <Filter>Fichiers sources\SproutEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sprout_engine\SproutApp.h">
@@ -140,6 +146,9 @@
     <ClInclude Include="sprout_engine\model.h">
       <Filter>Fichiers d%27en-tête\SproutEngine</Filter>
     </ClInclude>
+    <ClInclude Include="sprout_engine\transform.h">
+      <Filter>Fichiers d%27en-tête\SproutEngine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="data\shaders\default_vertex_shader.glsl">
@@ -152,6 +161,9 @@
       <Filter>Fichiers sources\data</Filter>
     </None>
     <None Include="data\shaders\debug_lines_vertex.glsl">
+      <Filter>Fichiers sources\data</Filter>
+    </None>
+    <None Include="data\shaders\plain_color_fragment.glsl">
       <Filter>Fichiers sources\data</Filter>
     </None>
   </ItemGroup>

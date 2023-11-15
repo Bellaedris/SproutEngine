@@ -83,8 +83,6 @@ Shader::Shader(const char* vert_path, const char* frag_path)
 
 	glDeleteShader(vert);
 	glDeleteShader(frag);
-
-	glLinkProgram(shader);
 }
 
 void Shader::use()

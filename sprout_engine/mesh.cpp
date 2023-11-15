@@ -1,6 +1,7 @@
 #include "mesh.h"
+#include "camera.h"
 
-Mesh::Mesh(const std::vector<VertexInfo> &vertices, const std::vector<unsigned int> &indices, const std::vector<Texture> &textures, const aiAABB& aabb) : vertices(vertices), indices(indices), textures(textures), aabb(aabb)
+Mesh::Mesh(const std::vector<VertexInfo> &vertices, const std::vector<unsigned int> &indices, const std::vector<Texture> &textures, const aiAABB& in_aabb) : vertices(vertices), indices(indices), textures(textures)
 {
 	// Mesh buffers/vao
 	glGenVertexArrays(1, &vao);
@@ -27,6 +28,9 @@ Mesh::Mesh(const std::vector<VertexInfo> &vertices, const std::vector<unsigned i
 
 	glBindVertexArray(0);
 
+	//init AABB
+	aabb = AABB(glm::vec3(in_aabb.mMin.x, in_aabb.mMin.y, in_aabb.mMin.z), glm::vec3(in_aabb.mMax.x, in_aabb.mMax.y, in_aabb.mMax.z));
+
 	// AABB buffers/vao
 	glGenVertexArrays(1, &aabb_vao);
 	glGenBuffers(1, &aabb_buff);
@@ -34,37 +38,38 @@ Mesh::Mesh(const std::vector<VertexInfo> &vertices, const std::vector<unsigned i
 	glBindVertexArray(aabb_vao);
 
 	// buffer containing all vertices data
-	float bounds[72] =
+	auto aabb_bounds = aabb.getVertices();
+	glm::vec3 bounds[24] =
 	{
 		//front face
-		aabb.mMin.x, aabb.mMin.y, aabb.mMin.z, 
-		aabb.mMax.x, aabb.mMin.y, aabb.mMin.z,
-		aabb.mMax.x, aabb.mMin.y, aabb.mMin.z,
-		aabb.mMax.x, aabb.mMax.y, aabb.mMin.z,
-		aabb.mMax.x, aabb.mMax.y, aabb.mMin.z,
-		aabb.mMin.x, aabb.mMax.y, aabb.mMin.z,
-		aabb.mMin.x, aabb.mMax.y, aabb.mMin.z,
-		aabb.mMin.x, aabb.mMin.y, aabb.mMin.z,
+		aabb_bounds[0],
+		aabb_bounds[1],
+		aabb_bounds[1],
+		aabb_bounds[2],
+		aabb_bounds[2],
+		aabb_bounds[3],
+		aabb_bounds[3],
+		aabb_bounds[0],
 
 		//back face
-		aabb.mMin.x, aabb.mMin.y, aabb.mMax.z,
-		aabb.mMax.x, aabb.mMin.y, aabb.mMax.z,
-		aabb.mMax.x, aabb.mMin.y, aabb.mMax.z,
-		aabb.mMax.x, aabb.mMax.y, aabb.mMax.z,
-		aabb.mMax.x, aabb.mMax.y, aabb.mMax.z,
-		aabb.mMin.x, aabb.mMax.y, aabb.mMax.z,
-		aabb.mMin.x, aabb.mMax.y, aabb.mMax.z,
-		aabb.mMin.x, aabb.mMin.y, aabb.mMax.z,
+		aabb_bounds[4],
+		aabb_bounds[5],
+		aabb_bounds[5],
+		aabb_bounds[6],
+		aabb_bounds[6],
+		aabb_bounds[7],
+		aabb_bounds[7],
+		aabb_bounds[4],
 
 		// edges
-		aabb.mMin.x, aabb.mMin.y, aabb.mMin.z,
-		aabb.mMin.x, aabb.mMin.y, aabb.mMax.z,
-		aabb.mMax.x, aabb.mMin.y, aabb.mMin.z,
-		aabb.mMax.x, aabb.mMin.y, aabb.mMax.z,
-		aabb.mMin.x, aabb.mMax.y, aabb.mMin.z,
-		aabb.mMin.x, aabb.mMax.y, aabb.mMax.z,
-		aabb.mMax.x, aabb.mMax.y, aabb.mMin.z,
-		aabb.mMax.x, aabb.mMax.y, aabb.mMax.z,
+		aabb_bounds[0],
+		aabb_bounds[4],
+		aabb_bounds[1],
+		aabb_bounds[5],
+		aabb_bounds[2],
+		aabb_bounds[6],
+		aabb_bounds[3],
+		aabb_bounds[7],
 	};
 
 	glBindBuffer(GL_ARRAY_BUFFER, aabb_buff);
@@ -76,8 +81,13 @@ Mesh::Mesh(const std::vector<VertexInfo> &vertices, const std::vector<unsigned i
 	glBindVertexArray(0);
 }
 
-void Mesh::draw(Shader& s/*, const Frustum& frustum*/) const
+void Mesh::draw(Shader& s, const Frustum& frustum, const Transform& transform) const
 {
+	//check if the aabb is visible (inside the frustum)
+	//convert aabb to center-extents
+	if (!aabb.isOnFrustum(frustum, transform))
+		return;
+
 	s.use();
 
 	// bind textures
@@ -102,11 +112,32 @@ void Mesh::draw(Shader& s/*, const Frustum& frustum*/) const
 	glBindVertexArray(0);
 }
 
-void Mesh::drawAABB(Shader& s) const
+void Mesh::drawAABB(Shader& s, const glm::mat3& transform, const glm::vec3& translation)
 {
 	s.use();
 
 	// draw AABB
 	glBindVertexArray(aabb_vao);
-	glDrawArrays(GL_LINES, 0, 72);
+	glDrawArrays(GL_LINES, 0, 24);
+	glBindVertexArray(0);
+}
+
+void Mesh::draw_debug_frustum(Shader& s, const Frustum& frustum, const Transform& t)
+{
+	s.use();
+
+	// test collision and give the correct color
+	Plane p(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0));
+	if (aabb.isOnFrustum(frustum, t))
+	{
+		s.uniform_data("color", 0.f, 1.f, 0.f);
+	}
+	else 
+	{
+		s.uniform_data("color", 1.f, 0.f, 0.f);
+	}
+
+	glBindVertexArray(vao);
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
 }

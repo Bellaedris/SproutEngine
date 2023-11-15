@@ -109,18 +109,26 @@ std::vector<Texture> Model::loadMaterialTexture(const aiMaterial* mat, aiTexture
 	return textures;
 }
 
-void Model::draw(Shader& s) const
+void Model::draw(Shader& s, const Frustum &f, const Transform &transform) const
 {
-	for (Mesh m : meshes)
+	for (const Mesh &m : meshes)
 	{
-		m.draw(s);
+		m.draw(s, f, transform);
 	}
 }
 
-void Model::drawAABB(Shader& s) const
+void Model::drawAABB(Shader& s, const glm::mat3 &transform, const glm::vec3 &translation)
 {
-	for (Mesh m : meshes)
+	for (Mesh &m : meshes)
 	{
-		m.drawAABB(s);
+		m.drawAABB(s, transform, translation);
+	}
+}
+
+void Model::draw_debug_frustum(Shader& s, const Frustum& frustum, const Transform& t)
+{
+	for (Mesh& m : meshes)
+	{
+		m.draw_debug_frustum(s, frustum, t);
 	}
 }

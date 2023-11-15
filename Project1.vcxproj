@@ -153,6 +153,8 @@
     <ClCompile Include="imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="sprout_engine\bounds.cpp" />
+    <ClCompile Include="sprout_engine\bounds.h" />
     <ClCompile Include="sprout_engine\camera.cpp" />
     <ClCompile Include="sprout_engine\mesh.cpp" />
     <ClCompile Include="sprout_engine\model.cpp" />
@@ -181,6 +183,7 @@
     <ClInclude Include="sprout_engine\SproutApp.h" />
     <ClInclude Include="sprout_engine\stb_image.h" />
     <ClInclude Include="sprout_engine\texture.h" />
+    <ClInclude Include="sprout_engine\transform.h" />
     <ClInclude Include="sprout_engine\utils.h" />
     <ClInclude Include="sprout_engine\window.h" />
   </ItemGroup>
@@ -189,6 +192,7 @@
     <None Include="data\shaders\debug_lines_vertex.glsl" />
     <None Include="data\shaders\default_fragment_shader.glsl" />
     <None Include="data\shaders\default_vertex_shader.glsl" />
+    <None Include="data\shaders\plain_color_fragment.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
