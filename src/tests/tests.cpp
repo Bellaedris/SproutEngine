@@ -2,6 +2,7 @@
 
 #include <sprout_engine/model.h>
 #include <sprout_engine/texture.h>
+#include <sprout_engine/light.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -54,6 +55,8 @@ public:
 
         test_camera = Camera(glm::vec3(2.f, 0.f, -2.f), glm::vec3(0.f, 1.f, 0.f), 180.f, 0.f);
 
+        light = DirectionalLight(glm::vec3(0.f, -1.f, 0.f), glm::vec3(.1, .1, .1), glm::vec3(1., 1., 1.), glm::vec3(.9, .9, .9));
+
         SoundEngine = irrklang::createIrrKlangDevice();
 
         //init ImGui
@@ -83,12 +86,19 @@ public:
         ImGui::InputFloat("FoV value", &fov, 1.f);
         ImGui::InputFloat("Aspect ratio w", &w, 1.f);
         ImGui::InputFloat("Aspect ratio h", &h, 1.f);
-        ImGui::InputFloat3("Position of the light", lightPos);
+        ImGui::InputFloat3("Direction of the light", lightDir);
         ImGui::InputFloat3("Position of the object", objectPos);
         ImGui::Checkbox("Use moving light source", &use_orbiter_light);
-        ImGui::ColorEdit3("color ambiant", ambiant);
-        ImGui::ColorEdit3("color diffuse", diffuse);
-        ImGui::ColorEdit3("color specular", specular);
+        ImGui::ColorEdit3("light color ambiant", ambiant);
+        ImGui::ColorEdit3("light color diffuse", diffuse);
+        ImGui::ColorEdit3("light color specular", specular);
+        if (ImGui::Button("update light")) {
+            light.direction = glm::vec3(lightDir[0], lightDir[1], lightDir[2]);
+
+            light.ambiant = glm::vec3(ambiant[0], ambiant[1], ambiant[2]);
+            light.diffuse = glm::vec3(diffuse[0], diffuse[1], diffuse[2]);
+            light.specular = glm::vec3(specular[0], specular[1], specular[2]);
+        }
         ImGui::InputFloat("rotation", &rotation, 1.f);
         if (ImGui::Button("Spin an animal")) {
             spin = true;
@@ -120,10 +130,10 @@ public:
         glm::mat4 inverseViewMatrix, normalMatrix;
 
         s.use();
-        s.uniform_data("light.position", lightPos[0], lightPos[1], lightPos[2]);
-        s.uniform_data("light.ambiant", ambiant[0], ambiant[1], ambiant[2]);
-        s.uniform_data("light.diffuse", diffuse[0], diffuse[1], diffuse[2]);
-        s.uniform_data("light.specular", specular[0], specular[1], specular[2]);
+        s.uniform_data("light.direction", light.direction[0], light.direction[1], light.direction[2]);
+        s.uniform_data("light.ambiant", light.ambiant[0], light.ambiant[1], light.ambiant[2]);
+        s.uniform_data("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
+        s.uniform_data("light.specular", light.specular[0], light.specular[1], light.specular[2]);
 
         Transform t;
         t.setLocalScale(glm::vec3(.1, .1, .1));
@@ -216,6 +226,7 @@ protected:
     Model m2;
     Shader s, s_debug_aabb, s_debug_frustum;
     Camera test_camera;
+    DirectionalLight light;
 
     // imgui inputs
     float color[4] = {0., 0., 1., 1. };
@@ -223,6 +234,7 @@ protected:
     float diffuse[4] = {1., 1., 1., 1.};
     float specular[4] = { .9, .9, .9, 1. };
     float lightPos[3] = { 0.f, 10.f, 10.f};
+    float lightDir[3] = { 0.f, 0.f, 0.f };
     float objectPos[3] = { 0., 0., 0. };
     float orbiter_light[3] = { 0.f, 0.f, 0.f };
     float w = 16.f;
