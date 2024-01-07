@@ -17,7 +17,7 @@ public:
 	std::string path;
 
 	Texture() : id(-1) {}
-	Texture(const char* path, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR)
+	Texture(const char* path, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR) : type(type), path(path)
 	{
 		int width, height, nbChan;
 		stbi_set_flip_vertically_on_load(true);
