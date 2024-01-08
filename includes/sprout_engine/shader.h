@@ -103,29 +103,34 @@ public:
 
 	// uniform data
 #pragma region uniform data
-	void uniform_data(const char* name, const glm::mat4 mat) const
+	GLint get_location(const std::string &name) const
 	{
-		glUniformMatrix4fv(glGetUniformLocation(shader, name), 1, false, glm::value_ptr(mat));
+		return glGetUniformLocation(shader, name.c_str());
 	}
 
-	void uniform_data(const char* name, const float x, const float y, const float z, const float w) const
+	void uniform_data(const std::string& name, const glm::mat4 mat) const
 	{
-		glUniform4f(glGetUniformLocation(shader, name), x, y, z, w);
+		glUniformMatrix4fv(get_location(name), 1, false, glm::value_ptr(mat));
 	}
 
-	void uniform_data(const char* name, const float x, const float y, const float z) const
+	void uniform_data(const std::string& name, const float x, const float y, const float z, const float w) const
 	{
-		glUniform3f(glGetUniformLocation(shader, name), x, y, z);
+		glUniform4f(get_location(name), x, y, z, w);
 	}
 
-	void uniform_data(const char* name, const float x) const
+	void uniform_data(const std::string &name, const float x, const float y, const float z) const
 	{
-		glUniform1f(glGetUniformLocation(shader, name), x);
+		glUniform3f(get_location(name), x, y, z);
 	}
 
-	void uniform_data(const char* name, const int x) const
+	void uniform_data(const std::string& name, const float x) const
 	{
-		glUniform1i(glGetUniformLocation(shader, name), x);
+		glUniform1f(get_location(name), x);
+	}
+
+	void uniform_data(const std::string& name, const int x) const
+	{
+		glUniform1i(get_location(name), x);
 	}
 #pragma endregion
 };
