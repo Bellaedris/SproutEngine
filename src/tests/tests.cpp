@@ -93,11 +93,8 @@ public:
         ImGui::ColorEdit3("light color diffuse", diffuse);
         ImGui::ColorEdit3("light color specular", specular);
         if (ImGui::Button("update light")) {
-            light.direction = glm::vec3(lightDir[0], lightDir[1], lightDir[2]);
-
-            light.ambiant = glm::vec3(ambiant[0], ambiant[1], ambiant[2]);
-            light.diffuse = glm::vec3(diffuse[0], diffuse[1], diffuse[2]);
-            light.specular = glm::vec3(specular[0], specular[1], specular[2]);
+            light.set_direction(lightDir);
+            light.set_colors(ambiant, diffuse, specular);
         }
         ImGui::InputFloat("rotation", &rotation, 1.f);
         if (ImGui::Button("Spin an animal")) {
@@ -130,10 +127,7 @@ public:
         glm::mat4 inverseViewMatrix, normalMatrix;
 
         s.use();
-        s.uniform_data("light.direction", light.direction[0], light.direction[1], light.direction[2]);
-        s.uniform_data("light.ambiant", light.ambiant[0], light.ambiant[1], light.ambiant[2]);
-        s.uniform_data("light.diffuse", light.diffuse[0], light.diffuse[1], light.diffuse[2]);
-        s.uniform_data("light.specular", light.specular[0], light.specular[1], light.specular[2]);
+        light.send_to_shader(s, 0);
 
         Transform t;
         t.setLocalScale(glm::vec3(.1, .1, .1));
