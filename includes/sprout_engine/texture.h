@@ -55,6 +55,20 @@ public:
 		stbi_image_free(data);
 	};
 
+	Texture(const int width, const int height, GLenum internal_format, GLenum format, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR) : type(type), path("empty")
+	{
+		glGenTextures(1, &id);
+		glBindTexture(GL_TEXTURE_2D, id);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering_method);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	};
+
 	inline unsigned int get_id() const { return id; };
 
 	void use(const GLenum texture_unit = GL_TEXTURE0) const
