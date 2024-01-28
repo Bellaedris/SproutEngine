@@ -67,12 +67,24 @@ public:
     
     void send_to_shader(Shader& s, int index)
     {
+        s.use();
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].position"), position[0], position[1], position[2]);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].ambiant"), ambiant[0], ambiant[1], ambiant[2]);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].diffuse"), diffuse[0], diffuse[1], diffuse[2]);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].specular"), specular[0], specular[1], specular[2]);
 
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].constant"), constant);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].linear"), linear);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].quadratic"), quadratic);
     };
 };
 
 struct SpotLight
 {
+    vec3 position;
+    vec3 direction;
+    float cutoff;
+
 
 };
 #endif
