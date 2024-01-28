@@ -63,6 +63,7 @@ endif(WIN32)
 
 set(PROJECTS
     tests
+    framebuffers
 )
 
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
