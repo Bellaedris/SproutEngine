@@ -130,6 +130,14 @@ public:
 		}
 	};
 
+	void draw(Shader& s) const
+	{
+		for (const Mesh& m : meshes)
+		{
+			m.draw(s);
+		}
+	};
+
 	void drawAABB(Shader& s, const glm::mat3& transform, const glm::vec3& translation)
 	{
 		for (Mesh& m : meshes)
