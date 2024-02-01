@@ -30,15 +30,17 @@ public:
         cam = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90.);
 
         m = Model(resources_path + "models/bistro-small/export.obj", false);
-        //m = Model(resources_path + "models/cube.obj", true);
+       //m = Model(resources_path + "models/cube.obj", true);
 
         s = Shader("default.vs", "default.fs");
         s_post_process = Shader("postprocess.vs", "postprocess.fs");
+        s_shadowmap = Shader("shadowmapping.vs", "shadowmapping.fs");
 
         test_camera = Camera(glm::vec3(2.f, 0.f, -2.f), glm::vec3(0.f, 1.f, 0.f), 180.f, 0.f);
 
         light = DirectionalLight(glm::vec3(0.f, -1.f, 0.f), glm::vec3(.1, .1, .1), glm::vec3(1., 1., 1.), glm::vec3(.9, .9, .9));
 
+        // post processing framebuffer/texture
         glGenFramebuffers(1, &fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -47,6 +49,13 @@ public:
 
         fbo_depth = Texture(1366, 768, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth.get_id(), 0);
+
+        // shadow mapping framebuffer/texture
+        glGenFramebuffers(1, &light_fb);
+        glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
+
+        light_fb_depth = Texture(1366, 768, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, "texture_diffuse", GL_CLAMP_TO_BORDER);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
 
         //set screen buffer/vao
         glGenVertexArrays(1, &vao);
@@ -80,6 +89,7 @@ public:
 
     int render()
     {
+        glEnable(GL_DEPTH_TEST);
         glClearColor(.1f, .1f, .1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -88,30 +98,74 @@ public:
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Parameters");
-        ImGui::PlotLines("framerate", framerate, IM_ARRAYSIZE(framerate), values_offset, "framerate", 0.f, 240, ImVec2(0, 80.f));
-        ImGui::Checkbox("Wireframe", &wireframe_mode);
-        ImGui::Checkbox("Show AABB", &show_aabb);
-        ImGui::Checkbox("Show before post process", &noPostProcess);
-        ImGui::InputFloat("FoV value", &fov, 1.f);
-        ImGui::InputFloat("Aspect ratio w", &w, 1.f);
-        ImGui::InputFloat("Aspect ratio h", &h, 1.f);
-        ImGui::InputFloat3("Position of the object", objectPos);
-        ImGui::InputFloat3("Direction of the light", lightDir);
-        ImGui::ColorEdit3("light color ambiant", ambiant);
-        ImGui::ColorEdit3("light color diffuse", diffuse);
-        ImGui::ColorEdit3("light color specular", specular);
-        if (ImGui::Button("update light")) {
-            light.set_direction(lightDir);
-            light.set_colors(ambiant, diffuse, specular);
+        if (ImGui::CollapsingHeader("performances"))
+        {
+            ImGui::PlotLines("framerate", framerate, IM_ARRAYSIZE(framerate), values_offset, "framerate", 0.f, 240, ImVec2(0, 80.f));
+            int milli = (int)(gpu_last_frame / 1000000);
+            int micro = (int)((gpu_last_frame / 1000) % 1000);
+            ImGui::Text(
+                "cpu %03dms\ngpu %02dms % 03dus",
+                cpu_last_frame, 
+                milli, micro
+            );
         }
-        if (ImGui::Button("reload shader")) {
-            s_post_process = Shader("postprocess.vs", "postprocess.fs");
+        if (ImGui::CollapsingHeader("Shadow mapping"))
+        {
+            ImGui::InputFloat2("Resolution", shadowmapRes);
+            if (ImGui::Button("Update")) {
+                glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
+                light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
+            }
         }
-        ImGui::InputFloat("rotation", &rotation, 1.f);
+        if (ImGui::CollapsingHeader("Parameters"))
+        {
+            ImGui::Checkbox("Wireframe", &wireframe_mode);
+            ImGui::Checkbox("Show AABB", &show_aabb);
+            ImGui::Checkbox("Show before post process", &noPostProcess);
+            ImGui::InputFloat("FoV value", &fov, 1.f);
+            ImGui::InputFloat("Aspect ratio w", &w, 1.f);
+            ImGui::InputFloat("Aspect ratio h", &h, 1.f);
+            ImGui::InputFloat3("Position of the object", objectPos);
+            ImGui::InputFloat3("Direction of the light", lightDir);
+            ImGui::ColorEdit3("light color ambiant", ambiant);
+            ImGui::ColorEdit3("light color diffuse", diffuse);
+            ImGui::ColorEdit3("light color specular", specular);
+            if (ImGui::Button("update light")) {
+                light.set_direction(lightDir);
+                light.set_colors(ambiant, diffuse, specular);
+            }
+            if (ImGui::Button("reload shader")) {
+                s = Shader("default.vs", "default.fs");
+                s_post_process = Shader("postprocess.vs", "postprocess.fs");
+            }
+            ImGui::InputFloat("rotation", &rotation, 1.f);
+        }
 
         ImGui::End();
 
+        //draw the scene from the light pov
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, light_fb);
         glEnable(GL_DEPTH_TEST);
+        glViewport(0, 0, shadowmapRes[0], shadowmapRes[1]);
+        glClearColor(.1f, .1f, .1f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glm::mat4 light_model = glm::mat4(1.f);
+        //light_model = glm::translate(light_model, sunPos);
+        
+        glm::mat4 light_view = glm::lookAt(glm::vec3(0., 30., 0.), glm::vec3(0., 0., 0.), glm::vec3(0., 0., 1.));
+
+        glm::mat4 light_projection = glm::ortho(-50.f, 50.f, -50.f, 50.f, .1f, 100.f); // glm::perspective(glm::radians(fov), w / h, .1f, 100.f);
+
+        glm::mat4 lightspaceMatrix = light_projection * light_view;
+
+        s_shadowmap.use();
+        s_shadowmap.uniform_data("mvpMatrix", lightspaceMatrix);
+
+        m.draw(s_shadowmap);
+
+        //then draw the scene in the camera pov
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
         glViewport(0, 0, 1366, 768);
         glClearColor(.1f, .1f, .1f, 1.f);
@@ -124,8 +178,7 @@ public:
         float camZ = std::cos(glfwGetTime()) * radius;
 
         glm::mat4 view = cam.view();
-        view = glm::translate(view, glm::vec3(0.f, 0.f, -3.f));
-
+        
         glm::mat4 projection = glm::perspective(glm::radians(fov), w / h, .1f, 100.f);
 
         glm::mat4 mvpMatrix; // = projection * view * model;
@@ -152,7 +205,11 @@ public:
         s.uniform_data("normalMatrix", normalMatrix);
         s.uniform_data("mvpMatrix", mvpMatrix);
         s.uniform_data("inverseViewMatrix", inverseViewMatrix);
+        s.uniform_data("lightspaceMatrix", lightspaceMatrix);
 
+        s.uniform_data("shadowmap", 2);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
         m.draw(s, cam.get_frustum(w / h, fov, .1, 100), t);
 
         if (noPostProcess)
@@ -205,7 +262,7 @@ public:
 
 protected:
     Model m;
-    Shader s, s_post_process;
+    Shader s, s_post_process, s_shadowmap;
     Camera test_camera;
     DirectionalLight light;
 
@@ -217,6 +274,8 @@ protected:
     unsigned int vao;
     unsigned int buffer;
 
+    glm::vec3 sunPos = glm::vec3(0., 10., 0.);
+
     // imgui inputs
     float color[4] = {0., 0., 1., 1. };
     float ambiant[4] = {.1, .1, .1, 1.};
@@ -226,9 +285,12 @@ protected:
     float lightDir[3] = { 0.f, 0.f, 0.f };
     float objectPos[3] = { 0., 0., 0. };
     float orbiter_light[3] = { 0.f, 0.f, 0.f };
+    float shadowmapRes[2] = { 1366.f, 768.f };
     float w = 16.f;
     float h = 9.f;
     float rotation = 0.f;
+    float last_frame_time_cpu;
+    float last_frame_time_gpu;
     bool wireframe_mode = false;
     bool show_aabb = false;
     bool noPostProcess = false;
