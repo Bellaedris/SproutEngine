@@ -3,6 +3,8 @@
 #include "shader.h"
 #include "camera.h"
 
+#include <chrono>
+
 class SproutApp
 {
 protected:
@@ -11,6 +13,12 @@ protected:
 
 	float delta_time;
 	float last_frame;
+
+	std::chrono::high_resolution_clock::time_point frame_begin;
+	std::chrono::high_resolution_clock::time_point frame_end;
+	GLuint frame_time_gpu;
+	int cpu_last_frame = 0;
+	GLint64 gpu_last_frame = 0;
 
 	// mouse movement control
 	static float lastX;
@@ -44,6 +52,7 @@ public:
 		if (init() < 0)
 			return -1;
 
+		glGenQueries(1, &frame_time_gpu);
 		glEnable(GL_DEPTH_TEST);
 
 		// glfw rendering loop
@@ -52,6 +61,8 @@ public:
 			float current_time = glfwGetTime();
 			delta_time = current_time - last_frame;
 			last_frame = current_time;
+			frame_begin = std::chrono::high_resolution_clock::now();
+			glBeginQuery(GL_TIME_ELAPSED, frame_time_gpu);
 
 			// handle camera inputs
 			prerender();
@@ -61,12 +72,19 @@ public:
 			if (render() < 0)
 				break;
 
+			frame_end = std::chrono::high_resolution_clock::now();
+			cpu_last_frame = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_begin).count();
+			glEndQuery(GL_TIME_ELAPSED);
+			glGetQueryObjecti64v(frame_time_gpu, GL_QUERY_RESULT, &gpu_last_frame);
+
 			glfwSwapBuffers(window);
 			glfwPollEvents();
 		}
 
 		if (quit() < 0)
 			return -1;
+
+		glDeleteQueries(1, &frame_time_gpu);
 
 		return 0;
 	};
