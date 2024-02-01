@@ -115,13 +115,8 @@ public:
 		glBindVertexArray(0);
 	};
 
-	void draw(Shader &s, const Frustum &frustum, const Transform& transform) const
+	void draw(Shader& s) const
 	{
-		//check if the aabb is visible (inside the frustum)
-		//convert aabb to center-extents
-		if (!aabb.isOnFrustum(frustum, transform))
-			return;
-
 		s.use();
 
 		// bind textures
@@ -144,6 +139,16 @@ public:
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
+	};
+
+	void draw(Shader &s, const Frustum &frustum, const Transform& transform) const
+	{
+		//check if the aabb is visible (inside the frustum)
+		//convert aabb to center-extents
+		if (!aabb.isOnFrustum(frustum, transform))
+			return;
+		else
+			draw(s);
 	};
 
 	void drawAABB(Shader& s, const glm::mat3& transform, const glm::vec3& translation)
