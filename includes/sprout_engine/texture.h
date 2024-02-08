@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <sprout_engine/image.h>
+
 #include "stb_image.h"
 
 #include <string>
@@ -65,7 +67,7 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering_method);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width(), data.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width(), data.height(), 0, GL_RGBA, GL_FLOAT, data.data());
 		glGenerateMipmap(GL_TEXTURE_2D);
 	};
 
