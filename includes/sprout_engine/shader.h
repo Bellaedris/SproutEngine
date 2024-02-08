@@ -10,7 +10,7 @@
 #include <fstream>
 #include <sstream>
 
-std::string* read_file(const char* filename)
+inline std::string* read_file(const char* filename)
 {
 	std::ifstream file(filename, std::ifstream::in);
 	if (file)
