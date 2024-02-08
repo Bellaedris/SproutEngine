@@ -29,23 +29,22 @@ protected:
 
 	Mesh processMesh(const aiMesh *mesh, const aiScene *scene)
 	{
-		std::vector<VertexInfo> vertices;
+		std::vector<glm::vec3> positions;
+		std::vector<glm::vec3> normals;
+		std::vector<glm::vec2> texcoords;
 		std::vector<unsigned int> indices;
 		std::vector<Texture> textures;
 
 		// process all vertex data
 		for (int i = 0; i < mesh->mNumVertices; i++)
 		{
-			VertexInfo vertex;
-			vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-			vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+			positions.push_back(glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z));
+			normals.push_back(glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z));
 
 			if (mesh->mTextureCoords[0])
-				vertex.uv = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+				texcoords.push_back(glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y));
 			else
-				vertex.uv = glm::vec2(0.f, 0.f);
-
-			vertices.push_back(vertex);
+				texcoords.push_back(glm::vec2(0.f, 0.f));
 		}
 
 		//process indices
@@ -67,7 +66,7 @@ protected:
 			textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
 		}
 
-		return Mesh(vertices, indices, textures, mesh->mAABB);
+		return Mesh(positions, normals, texcoords, indices, textures, mesh->mAABB);
 	};
 
 	std::vector<Texture> loadMaterialTexture(const aiMaterial* mat, aiTextureType type, std::string type_name)
@@ -122,17 +121,17 @@ public:
 		processNode(scene->mRootNode, scene);
 	};
 
-	void draw(Shader &s, const Frustum &f, const Transform &transform) const
+	void draw(Shader &s, const Frustum &f, const Transform &transform)
 	{
-		for (const Mesh& m : meshes)
+		for (Mesh& m : meshes)
 		{
 			m.draw(s, f, transform);
 		}
 	};
 
-	void draw(Shader& s) const
+	void draw(Shader& s)
 	{
-		for (const Mesh& m : meshes)
+		for (Mesh& m : meshes)
 		{
 			m.draw(s);
 		}
