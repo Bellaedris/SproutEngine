@@ -71,7 +71,7 @@ public:
 		glGenerateMipmap(GL_TEXTURE_2D);
 	};
 
-	Texture(const int width, const int height, GLenum internal_format, GLenum format, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR) : type(type), path("empty")
+	Texture(const int width, const int height, GLenum internal_format, GLenum format = GL_RGBA, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR) : type(type), path("empty")
 	{
 		glGenTextures(1, &id);
 		glBindTexture(GL_TEXTURE_2D, id);
