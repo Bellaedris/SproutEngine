@@ -1,4 +1,9 @@
 bin/
 out/
 resources/
+src/terrain_generation
 .vs
+/cmake-build-debug
+/cmake-build-debug-visual-studio
+/build
+/.idea

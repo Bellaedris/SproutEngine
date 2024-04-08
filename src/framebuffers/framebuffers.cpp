@@ -3,6 +3,7 @@
 #include <sprout_engine/model.h>
 #include <sprout_engine/texture.h>
 #include <sprout_engine/light.h>
+#include <sprout_engine/skybox.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -18,23 +19,24 @@
 #include <random>
 #include <ctime>
 
-std::string resources_path = "../../../resources/";
+std::string resources_path = "../../resources/";
 
 class AppTest : public SproutApp
 {
 public:
     AppTest() : SproutApp(1366, 768, 4, 6) {}
 
-    int init()
+    int init() override
     { 
         cam = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90.);
 
-        m = Model(resources_path + "models/bistro-small/export.obj", false);
-       //m = Model(resources_path + "models/cube.obj", true);
+       m = Model(resources_path + "models/bistro-small/export.obj", false);
+       // m = Model(resources_path + "models/cube.obj", true);
 
         s = Shader("default.vs", "default.fs");
         s_post_process = Shader("postprocess.vs", "postprocess.fs");
         s_shadowmap = Shader("shadowmapping.vs", "shadowmapping.fs");
+        s_skybox = Shader("skybox.vs", "skybox.fs");
 
         test_camera = Camera(glm::vec3(2.f, 0.f, -2.f), glm::vec3(0.f, 1.f, 0.f), 180.f, 0.f);
 
@@ -71,6 +73,16 @@ public:
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
+        std::array<std::string, 6> cubemap = {
+                resources_path + "textures/skyboxes/Daylight Box_Right.bmp",
+                resources_path + "textures/skyboxes/Daylight Box_Left.bmp",
+                resources_path + "textures/skyboxes/Daylight Box_Bottom.bmp",
+                resources_path + "textures/skyboxes/Daylight Box_Top.bmp",
+                resources_path + "textures/skyboxes/Daylight Box_Front.bmp",
+                resources_path + "textures/skyboxes/Daylight Box_Back.bmp",
+        };
+        m_skybox = Skybox(cubemap);
+
         //init ImGui
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -87,7 +99,7 @@ public:
         return 0;
     }
 
-    int render()
+    int render() override
     {
         glEnable(GL_DEPTH_TEST);
         glClearColor(.1f, .1f, .1f, 1.f);
@@ -138,6 +150,7 @@ public:
             if (ImGui::Button("reload shader")) {
                 s = Shader("default.vs", "default.fs");
                 s_post_process = Shader("postprocess.vs", "postprocess.fs");
+                s_skybox = Shader("skybox.vs", "skybox.fs");
             }
             ImGui::InputFloat("rotation", &rotation, 1.f);
         }
@@ -212,6 +225,14 @@ public:
         glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
         m.draw(s, cam.get_frustum(w / h, fov, .1, 100), t);
 
+        glDepthFunc(GL_LEQUAL);
+        s_skybox.use();
+        glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
+        s_skybox.uniform_data("viewMatrix", skyboxView);
+        s_skybox.uniform_data("projectionMatrix", projection);
+
+        m_skybox.draw(s_skybox);
+
         if (noPostProcess)
         {
             glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
@@ -262,9 +283,10 @@ public:
 
 protected:
     Model m;
-    Shader s, s_post_process, s_shadowmap;
+    Shader s, s_post_process, s_shadowmap, s_skybox;
     Camera test_camera;
     DirectionalLight light;
+    Skybox m_skybox;
 
     GLuint fbo;
     Texture fbo_texture;

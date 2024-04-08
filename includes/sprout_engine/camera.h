@@ -88,7 +88,7 @@ public:
 	Frustum get_frustum(float aspect, float fov, float znear, float zfar) const
 	{
 		Frustum frustum;
-		float halfVSide = std::tanf(glm::radians(fov) * .5f) * zfar; // find the half height of the far plane with trigo
+		float halfVSide = std::tan(glm::radians(fov) * .5f) * zfar; // find the half height of the far plane with trigo
 		float halfHSide = halfVSide * aspect; // aspect = w / h
 		vec3 farPlaneCenter = zfar * dir;
 
@@ -155,7 +155,7 @@ public:
 	{
 		glm::mat4 inversev = glm::inverse(view());
 
-		float halfVSide = std::tanf(glm::radians(fov) * .5f); // frustum half height of the far plane with trigo
+		float halfVSide = std::tan(glm::radians(fov) * .5f); // frustum half height of the far plane with trigo
 		float halfHSide = halfVSide * aspect; // aspect = w / h
 
 		float xn = halfVSide * znear;
