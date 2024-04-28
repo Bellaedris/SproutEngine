@@ -4,20 +4,14 @@
 #include <sprout_engine/texture.h>
 #include <sprout_engine/light.h>
 #include <sprout_engine/skybox.h>
+#include <sprout_engine/entity.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <irrklang/irrKlang.h>
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-
 #include <vector>
-#include <iostream>
-#include <random>
-#include <ctime>
 
 std::string resources_path = "../../resources/";
 
@@ -28,21 +22,22 @@ public:
 
     int init() override
     { 
-        cam = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90.);
+        cam = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
 
-       m = Model(resources_path + "models/bistro-small/export.obj", false);
-       // m = Model(resources_path + "models/cube.obj", true);
+       //m = Model(resources_path + "models/bistro-small/export.obj", false);
+       m_entities.emplace_back(resources_path + "models/cube.obj", false);
+       m = Model(resources_path + "models/cube.obj", true);
 
         s = Shader("default.vs", "default.fs");
         s_post_process = Shader("postprocess.vs", "postprocess.fs");
         s_shadowmap = Shader("shadowmapping.vs", "shadowmapping.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
 
-        test_camera = Camera(glm::vec3(2.f, 0.f, -2.f), glm::vec3(0.f, 1.f, 0.f), 180.f, 0.f);
+        test_camera = Camera(glm::vec3(2.f, 0.f, -2.f), glm::vec3(0.f, 1.f, 0.f), 180.f, 0.f, 0.1f, 1000.f, fov, 16.f / 9.f);
 
         light = DirectionalLight(glm::vec3(0.f, -1.f, 0.f), glm::vec3(.1, .1, .1), glm::vec3(1., 1., 1.), glm::vec3(.9, .9, .9));
 
-        // post processing framebuffer/texture
+        // post-processing framebuffer/texture
         glGenFramebuffers(1, &fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -83,17 +78,6 @@ public:
         };
         m_skybox = Skybox(cubemap);
 
-        //init ImGui
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-        ImGui::StyleColorsDark();
-        ImGui_ImplGlfw_InitForOpenGL(window, true);
-        ImGui_ImplOpenGL3_Init("#version 460");
-
         glEnable(GL_DEPTH_TEST);
 
         return 0;
@@ -106,9 +90,18 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // IMGUI
+        // inspector
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGui::Begin("Inspector");
+        for(const auto& entity : m_entities)
+        {
+            entity.drawInspector();
+        }
+        ImGui::End();
+
+        // general settings
         ImGui::Begin("Parameters");
         if (ImGui::CollapsingHeader("performances"))
         {
@@ -124,6 +117,8 @@ public:
         if (ImGui::CollapsingHeader("Shadow mapping"))
         {
             ImGui::InputFloat2("Resolution", shadowmapRes);
+            ImGui::InputFloat3("Shadow camera offset", shadowCamOffset);
+            ImGui::InputFloat("Orthographic zoom", &shadowMapOrthoSize);
             if (ImGui::Button("Update")) {
                 glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
                 light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT);
@@ -135,6 +130,8 @@ public:
             ImGui::Checkbox("Wireframe", &wireframe_mode);
             ImGui::Checkbox("Show AABB", &show_aabb);
             ImGui::Checkbox("Show before post process", &noPostProcess);
+            ImGui::Checkbox("Draw skybox", &drawSkybox);
+            ImGui::Checkbox("Shadow depth mode", &shadowDepthMode);
             ImGui::InputFloat("FoV value", &fov, 1.f);
             ImGui::InputFloat("Aspect ratio w", &w, 1.f);
             ImGui::InputFloat("Aspect ratio h", &h, 1.f);
@@ -164,19 +161,20 @@ public:
         glClearColor(.1f, .1f, .1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 light_model = glm::mat4(1.f);
-        //light_model = glm::translate(light_model, sunPos);
-        
-        glm::mat4 light_view = glm::lookAt(glm::vec3(0., 30., 0.), glm::vec3(0., 0., 0.), glm::vec3(0., 0., 1.));
+        glm::vec3 shadowCamPos = cam.get_position() + glm::vec3(shadowCamOffset[0], shadowCamOffset[1], shadowCamOffset[2]);
+        glm::mat4 light_view = glm::lookAt(shadowCamPos, shadowCamPos + light.getDirection(), glm::vec3(0., 0., 1.));
 
-        glm::mat4 light_projection = glm::ortho(-50.f, 50.f, -50.f, 50.f, .1f, 100.f); // glm::perspective(glm::radians(fov), w / h, .1f, 100.f);
+        glm::mat4 light_projection = glm::ortho(-shadowMapOrthoSize, shadowMapOrthoSize, -shadowMapOrthoSize, shadowMapOrthoSize, .1f, 100.f); // glm::perspective(glm::radians(fov), w / h, .1f, 100.f);
 
         glm::mat4 lightspaceMatrix = light_projection * light_view;
 
         s_shadowmap.use();
         s_shadowmap.uniform_data("mvpMatrix", lightspaceMatrix);
 
-        m.draw(s_shadowmap);
+        for(auto& entity : m_entities)
+        {
+            entity.draw(s_shadowmap);
+        }
 
         //then draw the scene in the camera pov
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
@@ -184,15 +182,9 @@ public:
         glClearColor(.1f, .1f, .1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float time = glfwGetTime();
-
-        const float radius = 10.f;
-        float camX = std::sin(glfwGetTime()) * radius;
-        float camZ = std::cos(glfwGetTime()) * radius;
-
         glm::mat4 view = cam.view();
-        
-        glm::mat4 projection = glm::perspective(glm::radians(fov), w / h, .1f, 100.f);
+
+        glm::mat4 projection = cam.projection();
 
         glm::mat4 mvpMatrix; // = projection * view * model;
         glm::mat4 inverseViewMatrix, normalMatrix;
@@ -200,38 +192,33 @@ public:
         s.use();
         light.send_to_shader(s, 0);
 
-        Transform t;
-        t.setLocalScale(glm::vec3(.1, .1, .1));
-        t.setLocalPosition(glm::vec3(objectPos[0], objectPos[1], objectPos[2]));
-        t.computeModelMatrix();
+        for(const auto& entity : m_entities) {
+            glm::mat4 model = entity.getTransform().getModelMatrix();
 
-        glm::mat4 model = glm::mat4(1.f);
-        model = glm::translate(model, glm::vec3(objectPos[0], objectPos[1], objectPos[2]));
-        model = glm::rotate(model, glm::radians(rotation), glm::vec3(0., 0., 1.));
-        
-        //model = glm::scale(model, glm::vec3(.1, .1, .1));
+            normalMatrix = glm::transpose(glm::inverse(model));
+            mvpMatrix = projection * view * model;
+            inverseViewMatrix = glm::inverse(view);
+            s.uniform_data("modelMatrix", model);
+            s.uniform_data("normalMatrix", normalMatrix);
+            s.uniform_data("mvpMatrix", mvpMatrix);
+            s.uniform_data("inverseViewMatrix", inverseViewMatrix);
+            s.uniform_data("lightspaceMatrix", lightspaceMatrix);
 
-        normalMatrix = glm::transpose(glm::inverse(model));
-        mvpMatrix = projection * view * model;
-        inverseViewMatrix = glm::inverse(view);
-        s.uniform_data("modelMatrix", model);
-        s.uniform_data("normalMatrix", normalMatrix);
-        s.uniform_data("mvpMatrix", mvpMatrix);
-        s.uniform_data("inverseViewMatrix", inverseViewMatrix);
-        s.uniform_data("lightspaceMatrix", lightspaceMatrix);
+            s.uniform_data("shadowmap", 2);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
+            m.draw(s, cam.getFrustum(), entity.getTransform());
+        }
 
-        s.uniform_data("shadowmap", 2);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
-        m.draw(s, cam.get_frustum(w / h, fov, .1, 100), t);
+        if (drawSkybox) {
+            glDepthFunc(GL_LEQUAL);
+            s_skybox.use();
+            glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
+            s_skybox.uniform_data("viewMatrix", skyboxView);
+            s_skybox.uniform_data("projectionMatrix", projection);
 
-        glDepthFunc(GL_LEQUAL);
-        s_skybox.use();
-        glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
-        s_skybox.uniform_data("viewMatrix", skyboxView);
-        s_skybox.uniform_data("projectionMatrix", projection);
-
-        m_skybox.draw(s_skybox);
+            m_skybox.draw(s_skybox);
+        }
 
         if (noPostProcess)
         {
@@ -282,6 +269,7 @@ public:
     }
 
 protected:
+    std::vector<Entity> m_entities;
     Model m;
     Shader s, s_post_process, s_shadowmap, s_skybox;
     Camera test_camera;
@@ -307,7 +295,9 @@ protected:
     float lightDir[3] = { 0.f, 0.f, 0.f };
     float objectPos[3] = { 0., 0., 0. };
     float orbiter_light[3] = { 0.f, 0.f, 0.f };
+    float shadowCamOffset[3] = {0.f, 10.f, 0.f};
     float shadowmapRes[2] = { 1366.f, 768.f };
+    float shadowMapOrthoSize = 20.f;
     float w = 16.f;
     float h = 9.f;
     float rotation = 0.f;
@@ -316,16 +306,18 @@ protected:
     bool wireframe_mode = false;
     bool show_aabb = false;
     bool noPostProcess = false;
+    bool drawSkybox = false;
+    bool shadowDepthMode = false;
 
     float quadVertices[24] = {
-        // positions   // texCoords
-        -1.0f,  1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
+            // positions   // texCoords
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            -1.0f, -1.0f,  0.0f, 0.0f,
+            1.0f, -1.0f,  1.0f, 0.0f,
 
-        -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f
+            -1.0f,  1.0f,  0.0f, 1.0f,
+            1.0f, -1.0f,  1.0f, 0.0f,
+            1.0f,  1.0f,  1.0f, 1.0f
     };
 
     //framerate management

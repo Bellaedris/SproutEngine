@@ -7,7 +7,7 @@ class Transform
 {
 protected:
 	//Local space information
-	glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
+
 	glm::vec3 m_eulerRot = { 0.0f, 0.0f, 0.0f }; //In degrees
 	glm::vec3 m_scale = { 1.0f, 1.0f, 1.0f };
 
@@ -31,7 +31,7 @@ protected:
 		return glm::translate(glm::mat4(1.0f), m_pos) * rotationMatrix * glm::scale(glm::mat4(1.0f), m_scale);
 	}
 public:
-
+    glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
 	void computeModelMatrix()
 	{
         m_model = getLocalModelMatrix();
