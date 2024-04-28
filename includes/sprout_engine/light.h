@@ -40,6 +40,11 @@ public:
     DirectionalLight(glm::vec3 direction, glm::vec3 ambiant, glm::vec3 diffuse, glm::vec3 specular)
         : Light(ambiant, diffuse, specular), direction(direction) {};
 
+    [[nodiscard]] glm::vec3 getDirection() const
+    {
+        return direction;
+    };
+
     void set_direction(float* dir) { direction = vec3(dir[0], dir[1], dir[2]); };
 
     void send_to_shader(Shader& s, int index)

@@ -12,7 +12,7 @@ protected:
 	glm::vec3 m_scale = { 1.0f, 1.0f, 1.0f };
 
 	//Global space information concatenate in matrix
-	glm::mat4 m_modelMatrix = glm::mat4(1.0f);
+	glm::mat4 m_model = glm::mat4(1.0f);
 
 	//Dirty flag
 	bool m_isDirty = true;
@@ -34,13 +34,13 @@ public:
 
 	void computeModelMatrix()
 	{
-		m_modelMatrix = getLocalModelMatrix();
+        m_model = getLocalModelMatrix();
 		m_isDirty = false;
 	}
 
 	void computeModelMatrix(const glm::mat4& parentGlobalModelMatrix)
 	{
-		m_modelMatrix = parentGlobalModelMatrix * getLocalModelMatrix();
+        m_model = parentGlobalModelMatrix * getLocalModelMatrix();
 		m_isDirty = false;
 	}
 
@@ -64,7 +64,7 @@ public:
 
 	const glm::vec3& getGlobalPosition() const
 	{
-		return m_modelMatrix[3];
+		return m_model[3];
 	}
 
 	const glm::vec3& getLocalPosition() const
@@ -84,28 +84,28 @@ public:
 
 	const glm::mat4& getModelMatrix() const
 	{
-		return m_modelMatrix;
+		return m_model;
 	}
 
 	glm::vec3 getRight() const
 	{
-		return m_modelMatrix[0];
+		return m_model[0];
 	}
 
 
 	glm::vec3 getUp() const
 	{
-		return m_modelMatrix[1];
+		return m_model[1];
 	}
 
 	glm::vec3 getBackward() const
 	{
-		return m_modelMatrix[2];
+		return m_model[2];
 	}
 
 	glm::vec3 getForward() const
 	{
-		return -m_modelMatrix[2];
+		return -m_model[2];
 	}
 
 	glm::vec3 getGlobalScale() const

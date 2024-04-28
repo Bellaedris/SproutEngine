@@ -3,7 +3,7 @@ cmake_policy(VERSION 3.0)
 
 project(SproutEngine)
 
-set(CMAKE_CXX_STANDARD 11) # this does nothing for MSVC, use target_compile_options below
+set(CMAKE_CXX_STANDARD 17) # this does nothing for MSVC, use target_compile_options below
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
@@ -64,6 +64,7 @@ endif(WIN32)
 set(PROJECTS
     tests
     framebuffers
+    terrain_generation
 )
 
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
@@ -75,6 +76,22 @@ set(LIBS ${LIBS} STB_IMAGE)
 
 add_library(GLAD "src/glad.c")
 set(LIBS ${LIBS} GLAD)
+
+#core sprout engine target
+file(GLOB CORE_SOURCES "includes/sprout_engine/*.cpp")
+
+add_library(
+        SproutEngineCore
+        ${CORE_SOURCES}
+)
+set(LIBS ${LIBS} SproutEngineCore)
+
+file(GLOB IMGUI_SOURCES "includes/imgui/*.cpp")
+add_library(
+        IMGUI
+        ${IMGUI_SOURCES}
+)
+set(LIBS ${LIBS} IMGUI)
 
 macro(makeLink src dest target)
   add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}  DEPENDS  ${dest} COMMENT "mklink ${src} -> ${dest}")
@@ -101,7 +118,7 @@ function(create_project_from_sources project)
     add_executable(${NAME} ${SOURCE})
     target_link_libraries(${NAME} ${LIBS})
     if(MSVC)
-		target_compile_options(${NAME} PRIVATE /std:c++11 /MP)
+		target_compile_options(${NAME} PRIVATE /std:c++17 /MP)
         target_link_options(${NAME} PUBLIC /ignore:4099)
     endif(MSVC)
     if(WIN32)

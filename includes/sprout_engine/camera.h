@@ -45,111 +45,48 @@ class Camera
 {
 protected:
 	glm::vec3 pos;
-	glm::vec3 dir;
+    glm::vec3 dir;
 	glm::vec3 up;
 	glm::vec3 right;
+
+    float m_zNear;
+    float m_zFar;
+    float m_fov;
+    float m_aspectRatio;
 
 	float pitch;
 	float yaw;
 
-	void update_dir()
-	{
-		vec3 new_dir;
-		new_dir.x = std::cos(radians(yaw)) * std::cos(radians(pitch));
-		new_dir.y = std::sin(radians(pitch));
-		new_dir.z = std::sin(radians(yaw)) * std::cos(radians(pitch));
+    glm::mat4 m_view;
+    glm::mat4 m_projection;
 
-		dir = normalize(new_dir);
-		right = normalize(cross(dir, up));
-	};
+    Frustum m_frustum;
+
+	void update_dir();
 
 public:
-	Camera()
-		: dir(vec3(0., 0., -1.)), pitch(0.), yaw(0.)
-	{
-		pos = vec3(0., 0., 0.);
-		up = vec3(0., 1., 0.);
+	Camera();
 
-		right = normalize(cross(dir, up));
-	};
+	Camera(const glm::vec3 &pos, const glm::vec3 &up, float pitch, float yaw, float p_znear, float p_zfar, float p_fov, float p_aspectRatio);
 
-	Camera(const glm::vec3 &pos, const glm::vec3 &up, float pitch, float yaw) : dir(vec3(0., 0., -1.)), pos(pos), up(up), pitch(pitch), yaw(yaw)
-	{
-		right = normalize(cross(dir, up));
-		update_dir();
-	};
-
-	glm::mat4 view() const {
-		return lookAt(pos, pos + dir, up);
-	};
+	glm::mat4 view() const;
+    glm::mat4 projection() const;
 
 	inline glm::vec3 get_position() const { return pos; };
+    inline Frustum getFrustum() const { return m_frustum; };
 
-	Frustum get_frustum(float aspect, float fov, float znear, float zfar) const
-	{
-		Frustum frustum;
-		float halfVSide = std::tan(glm::radians(fov) * .5f) * zfar; // find the half height of the far plane with trigo
-		float halfHSide = halfVSide * aspect; // aspect = w / h
-		vec3 farPlaneCenter = zfar * dir;
+    void setZNear(float mZNear);
+    void setZFar(float mZFar);
+    void setFov(float mFov);
+    void setAspectRatio(float mAspectRatio);
 
-		frustum.farFace = { pos + farPlaneCenter, -dir };
-		frustum.nearFace = { pos + znear * dir, dir };
+    void updateView();
+    void updateProjection();
+    void updateFrustum();
 
-		frustum.rightFace = { pos , cross(farPlaneCenter - right * halfHSide, up) };
-		frustum.leftFace = { pos , cross(up, farPlaneCenter + right * halfHSide) };
+	void process_input(CAMERA_DIR direction, float delta_time);
 
-		frustum.topFace = { pos , cross(right, farPlaneCenter - up * halfVSide) };
-		frustum.bottomFace = { pos , cross(farPlaneCenter + up * halfVSide, right) };
-
-		return frustum;
-	};
-
-	void process_input(CAMERA_DIR direction, float delta_time)
-	{
-		float velocity = CAMERA_SPEED * delta_time;
-		switch (direction)
-		{
-		case FORWARD:
-			pos += dir * velocity;
-			break;
-		case BACKWARD:
-			pos -= dir * velocity;
-			break;
-		case LEFT:
-			pos -= right * velocity;
-			break;
-		case RIGHT:
-			pos += right * velocity;
-			break;
-		case UP:
-			pos += up * velocity;
-			break;
-		case DOWN:
-			pos -= up * velocity;
-			break;
-		}
-
-	};
-
-	void process_mouse_movement(float xoffset, float yoffset)
-	{
-		xoffset = std::abs(xoffset) <= 1.f ? 0.f : xoffset;
-		yoffset = std::abs(yoffset) <= 1.f ? 0.f : yoffset;
-
-		xoffset *= CAMERA_SENSITIVITY;
-		yoffset *= CAMERA_SENSITIVITY;
-
-		yaw += xoffset;
-		pitch += yoffset;
-
-		// to avoid the lookAt matrix to flip 
-		if (pitch > 89.f)
-			pitch = 89.f;
-		if (pitch < -89.f)
-			pitch = -89.f;
-
-		update_dir();
-	};
+	void process_mouse_movement(float xoffset, float yoffset);
 
 	void draw_frustum(Shader& s, float aspect, float fov, float znear, float zfar) const
 	{
