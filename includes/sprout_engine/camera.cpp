@@ -3,6 +3,7 @@
 //
 
 #include "camera.h"
+#include "imgui/imgui.h"
 
 void Camera::update_dir() {
     vec3 new_dir;
@@ -115,7 +116,7 @@ void Camera::process_input(CAMERA_DIR direction, float delta_time) {
             pos -= up * velocity;
             break;
     }
-
+    update_dir();
 }
 
 void Camera::process_mouse_movement(float xoffset, float yoffset) {
@@ -135,4 +136,27 @@ void Camera::process_mouse_movement(float xoffset, float yoffset) {
         pitch = -89.f;
 
     update_dir();
+}
+
+void Camera::drawInspector() {
+    if(ImGui::TreeNode("Camera"))
+    {
+        if(ImGui::InputFloat3("Position", glm::value_ptr(pos)))
+        {
+            update_dir();
+        }
+        if (ImGui::InputFloat("Pitch", &pitch))
+        {
+            update_dir();
+        }
+        if (ImGui::InputFloat("Yaw", &yaw))
+        {
+            update_dir();
+        }
+        if (ImGui::InputFloat("FoV", &m_fov))
+        {
+            updateProjection();
+        }
+        ImGui::TreePop();
+    }
 }

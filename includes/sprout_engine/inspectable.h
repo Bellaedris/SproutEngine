@@ -7,7 +7,7 @@
 
 
 class Inspectable {
-    virtual void drawInspector() const = 0;
+    virtual void drawInspector() = 0;
 };
 
 

@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <sprout_engine/shader.h>
+#include "inspectable.h"
 
 using namespace glm;
 
@@ -41,7 +42,7 @@ struct Frustum
 const float CAMERA_SPEED = 5.f;
 const float CAMERA_SENSITIVITY = .1f;
 
-class Camera
+class Camera : public Inspectable
 {
 protected:
 	glm::vec3 pos;
@@ -66,14 +67,15 @@ protected:
 
 public:
 	Camera();
-
 	Camera(const glm::vec3 &pos, const glm::vec3 &up, float pitch, float yaw, float p_znear, float p_zfar, float p_fov, float p_aspectRatio);
 
-	glm::mat4 view() const;
-    glm::mat4 projection() const;
+    void drawInspector() override;
 
-	inline glm::vec3 get_position() const { return pos; };
-    inline Frustum getFrustum() const { return m_frustum; };
+	[[nodiscard]] glm::mat4 view() const;
+    [[nodiscard]] glm::mat4 projection() const;
+
+	[[nodiscard]] inline glm::vec3 get_position() const { return pos; };
+    [[nodiscard]] inline Frustum getFrustum() const { return m_frustum; };
 
     void setZNear(float mZNear);
     void setZFar(float mZFar);

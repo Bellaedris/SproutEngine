@@ -19,12 +19,14 @@ public:
 protected:
     Model m_model;
 
+    std::string m_name{"entity"};
+
 public:
     explicit Entity(const std::string& path, bool flip_uv = false);
 
     void draw(Shader &p_shader);
     void draw(Shader &p_shader, const Frustum& p_frustum, const Transform& p_transform);
-    void drawInspector() const override;
+    void drawInspector() override;
 };
 
 
