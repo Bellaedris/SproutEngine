@@ -39,29 +39,30 @@ SproutApp::SproutApp(int width, int height, int major, int minor)
 }
 
 SproutApp::~SproutApp() {
+    delete cam;
     glfwTerminate();
 }
 
 void SproutApp::prerender() {
     //keyboard
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cam.process_input(FORWARD, delta_time);
+        cam->process_input(FORWARD, delta_time);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cam.process_input(BACKWARD, delta_time);
+        cam->process_input(BACKWARD, delta_time);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cam.process_input(LEFT, delta_time);
+        cam->process_input(LEFT, delta_time);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cam.process_input(RIGHT, delta_time);
+        cam->process_input(RIGHT, delta_time);
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        cam.process_input(UP, delta_time);
+        cam->process_input(UP, delta_time);
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        cam.process_input(DOWN, delta_time);
+        cam->process_input(DOWN, delta_time);
 
     //mouse
     if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS)
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        cam.process_mouse_movement(xoffset, yoffset);
+        cam->process_mouse_movement(xoffset, yoffset);
     }
     else
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -132,4 +133,8 @@ void SproutApp::scroll_callback(GLFWwindow *w, double xoffset, double yoffset) {
         fov = 1.0f;
     if (fov > 45.0f)
         fov = 45.0f;
+}
+
+void SproutApp::setActiveCamera(Camera *p_camera) {
+    cam = p_camera;
 }

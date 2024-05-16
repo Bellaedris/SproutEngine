@@ -15,7 +15,7 @@ class SproutApp
 {
 protected:
 	Window window;
-	Camera cam;
+	Camera* cam;
 
 	float delta_time;
 	float last_frame;
@@ -46,6 +46,8 @@ public:
 	virtual int render() = 0;
 	virtual int quit() = 0;
 	void prerender();
+
+    void setActiveCamera(Camera* p_camera);
 
 	static void mouse_callback(GLFWwindow* w, double xpos, double ypos);
 
