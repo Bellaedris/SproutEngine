@@ -21,19 +21,19 @@ public:
     AppTest() : SproutApp(1366, 768, 4, 6) {}
 
     int init() override
-    { 
-        cam = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
+    {
+        mainCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
+        setActiveCamera(&mainCamera);
 
-       //m = Model(resources_path + "models/bistro-small/export.obj", false);
-       m_entities.emplace_back(resources_path + "models/cube.obj", false);
-       m = Model(resources_path + "models/cube.obj", true);
+        m_entities.emplace_back(resources_path + "models/Sponza/sponza.obj", false);
+       //m = Model(resources_path + "models/cube.obj", true);
 
         s = Shader("default.vs", "default.fs");
         s_post_process = Shader("postprocess.vs", "postprocess.fs");
         s_shadowmap = Shader("shadowmapping.vs", "shadowmapping.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
 
-        test_camera = Camera(glm::vec3(2.f, 0.f, -2.f), glm::vec3(0.f, 1.f, 0.f), 180.f, 0.f, 0.1f, 1000.f, fov, 16.f / 9.f);
+        shadowMapCamera = Camera(glm::vec3(0.f, 0.f, 6.f), glm::vec3(0.f, 1.f, 0.f), -90.f, 0.f, 0.1f, 1000.f, fov, 16.f / 9.f);
 
         light = DirectionalLight(glm::vec3(0.f, -1.f, 0.f), glm::vec3(.1, .1, .1), glm::vec3(1., 1., 1.), glm::vec3(.9, .9, .9));
 
@@ -95,7 +95,9 @@ public:
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Inspector");
-        for(const auto& entity : m_entities)
+        // mainCamera inspector
+        mainCamera.drawInspector();
+        for(auto& entity : m_entities)
         {
             entity.drawInspector();
         }
@@ -121,7 +123,7 @@ public:
             ImGui::InputFloat("Orthographic zoom", &shadowMapOrthoSize);
             if (ImGui::Button("Update")) {
                 glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
-                light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT);
+                light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, "depthMap", GL_CLAMP_TO_BORDER);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
             }
         }
@@ -132,6 +134,13 @@ public:
             ImGui::Checkbox("Show before post process", &noPostProcess);
             ImGui::Checkbox("Draw skybox", &drawSkybox);
             ImGui::Checkbox("Shadow depth mode", &shadowDepthMode);
+            if(ImGui::Checkbox("useLightCamera", &controlLightCamera))
+            {
+                if (controlLightCamera)
+                    setActiveCamera(&shadowMapCamera);
+                else
+                    setActiveCamera(&mainCamera);
+            }
             ImGui::InputFloat("FoV value", &fov, 1.f);
             ImGui::InputFloat("Aspect ratio w", &w, 1.f);
             ImGui::InputFloat("Aspect ratio h", &h, 1.f);
@@ -157,22 +166,21 @@ public:
         //draw the scene from the light pov
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, light_fb);
         glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
         glViewport(0, 0, shadowmapRes[0], shadowmapRes[1]);
-        glClearColor(.1f, .1f, .1f, 1.f);
+        glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::vec3 shadowCamPos = cam.get_position() + glm::vec3(shadowCamOffset[0], shadowCamOffset[1], shadowCamOffset[2]);
-        glm::mat4 light_view = glm::lookAt(shadowCamPos, shadowCamPos + light.getDirection(), glm::vec3(0., 0., 1.));
+        glm::mat4 light_view = shadowMapCamera.view();
 
-        glm::mat4 light_projection = glm::ortho(-shadowMapOrthoSize, shadowMapOrthoSize, -shadowMapOrthoSize, shadowMapOrthoSize, .1f, 100.f); // glm::perspective(glm::radians(fov), w / h, .1f, 100.f);
-
-        glm::mat4 lightspaceMatrix = light_projection * light_view;
-
-        s_shadowmap.use();
-        s_shadowmap.uniform_data("mvpMatrix", lightspaceMatrix);
+        glm::mat4 light_projection = glm::ortho(-shadowMapOrthoSize, shadowMapOrthoSize, -shadowMapOrthoSize, shadowMapOrthoSize, .1f, 1000.f); // glm::perspective(glm::radians(fov), w / h, .1f, 100.f);
 
         for(auto& entity : m_entities)
         {
+            s_shadowmap.use();
+
+            s_shadowmap.uniform_data("mvpMatrix", light_projection * light_view * entity.getTransform().getModelMatrix());
+
             entity.draw(s_shadowmap);
         }
 
@@ -182,18 +190,19 @@ public:
         glClearColor(.1f, .1f, .1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 view = cam.view();
+        glm::mat4 view = cam->view();
 
-        glm::mat4 projection = cam.projection();
+        glm::mat4 projection = cam->projection();
 
         glm::mat4 mvpMatrix; // = projection * view * model;
-        glm::mat4 inverseViewMatrix, normalMatrix;
+        glm::mat4 inverseViewMatrix, normalMatrix, lightspaceMatrix, model;
 
         s.use();
         light.send_to_shader(s, 0);
 
-        for(const auto& entity : m_entities) {
-            glm::mat4 model = entity.getTransform().getModelMatrix();
+        for(auto& entity : m_entities) {
+            model = entity.getTransform().getModelMatrix();
+            lightspaceMatrix = light_projection * light_view * model;
 
             normalMatrix = glm::transpose(glm::inverse(model));
             mvpMatrix = projection * view * model;
@@ -203,11 +212,15 @@ public:
             s.uniform_data("mvpMatrix", mvpMatrix);
             s.uniform_data("inverseViewMatrix", inverseViewMatrix);
             s.uniform_data("lightspaceMatrix", lightspaceMatrix);
+            if(shadowDepthMode)
+                s.uniform_data("drawDepth", 1);
+            else
+                s.uniform_data("drawDepth", 0);
 
-            s.uniform_data("shadowmap", 2);
+            s.uniform_data("depthMap", 2);
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
-            m.draw(s, cam.getFrustum(), entity.getTransform());
+            entity.draw(s, cam->getFrustum(), entity.getTransform());
         }
 
         if (drawSkybox) {
@@ -272,7 +285,8 @@ protected:
     std::vector<Entity> m_entities;
     Model m;
     Shader s, s_post_process, s_shadowmap, s_skybox;
-    Camera test_camera;
+    Camera mainCamera;
+    Camera shadowMapCamera;
     DirectionalLight light;
     Skybox m_skybox;
 
@@ -308,6 +322,7 @@ protected:
     bool noPostProcess = false;
     bool drawSkybox = false;
     bool shadowDepthMode = false;
+    bool controlLightCamera = false;
 
     float quadVertices[24] = {
             // positions   // texCoords
