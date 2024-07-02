@@ -2,23 +2,10 @@
 
 #include <glm/glm.hpp>
 
-class Color
-{
-protected:
+using Color = glm::vec4;
 
-public:
-	float r;
-	float g;
-	float b;
-	float a;
-
-	Color() : r(1.f), g(1.f), b(1.f), a(1.f) {};
-	Color(float r, float g, float b) : r(r), g(g), b(b), a(1.f) {};
-	Color(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {};
-
-	inline static Color Red() { return Color(1.f, 0.f, 0.f); };
-	inline static Color Green() { return Color(0.f, 1.f, 0.f); };
-	inline static Color Blue() { return Color(0.f, 0.f, 1.f); };
-	inline static Color Black() { return Color(0.f, 0.f, 0.f); };
-	inline static Color White() { return Color(1.f, 1.f, 1.f); };
-};
+inline Color Red() { return {1.f, 0.f, 0.f, 1.f}; };
+inline Color Green() { return {0.f, 1.f, 0.f, 1.f}; };
+inline Color Blue() { return {0.f, 0.f, 1.f, 1.f}; };
+inline Color Black() { return {0.f, 0.f, 0.f, 1.f}; };
+inline Color White() { return {1.f, 1.f, 1.f, 1.f}; };
