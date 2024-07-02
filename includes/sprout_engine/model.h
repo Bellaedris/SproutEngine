@@ -23,6 +23,8 @@ public:
 	Model() = default;
 	explicit Model(const std::string& path, bool flip_uv = false);
 
+    const std::vector<Mesh>& getMeshes() const {return meshes;};
+
 	void draw(Shader &s, const Frustum &f, const Transform &transform);
 
 	void draw(Shader& s);

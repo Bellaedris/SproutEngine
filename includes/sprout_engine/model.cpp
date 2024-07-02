@@ -21,14 +21,19 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
+    std::vector<glm::vec4> colors;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
+    Material material;
 
     // process all vertex data
     for (int i = 0; i < mesh->mNumVertices; i++)
     {
         positions.emplace_back(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
         normals.emplace_back(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+
+        if (mesh->mColors[0])
+            colors.emplace_back(mesh->mColors[i]->r, mesh->mColors[i]->g, mesh->mColors[i]->b, mesh->mColors[i]->a);
 
         if (mesh->mTextureCoords[0])
             texcoords.emplace_back(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
@@ -48,14 +53,26 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
     if (mesh->mMaterialIndex >= 0)
     {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
-        std::vector<Texture> diffuse_maps = loadMaterialTexture(mat, aiTextureType_DIFFUSE, "texture_diffuse");
-        std::vector<Texture> specular_maps = loadMaterialTexture(mat, aiTextureType_SPECULAR, "texture_specular");
+        //if there is no diffuse texture, store a diffuse color
+        if (mat->GetTextureCount(aiTextureType_DIFFUSE) < 1) {
+            aiColor4D color;
+            if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &color)) {
+                material.diffuse = Color(color.r, color.g, color.b, color.a);
+            }
+        }
+        else
+        {
+            std::vector<Texture> diffuse_maps = loadMaterialTexture(mat, aiTextureType_DIFFUSE, "texture_diffuse");
+            std::vector<Texture> specular_maps = loadMaterialTexture(mat, aiTextureType_SPECULAR, "texture_specular");
+            std::vector<Texture> emissive_maps = loadMaterialTexture(mat, aiTextureType_EMISSIVE, "texture_emissive");
 
-        textures.insert(textures.end(), diffuse_maps.begin(), diffuse_maps.end());
-        textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
+            textures.insert(textures.end(), diffuse_maps.begin(), diffuse_maps.end());
+            textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
+        }
+
     }
 
-    return {positions, normals, texcoords, indices, textures, mesh->mAABB};
+    return {positions, normals, texcoords, colors, indices, textures, material, mesh->mAABB};
 }
 
 std::vector<Texture> Model::loadMaterialTexture(const aiMaterial *mat, aiTextureType type, std::string type_name) {
