@@ -7,12 +7,15 @@
 
 void Camera::update_dir() {
     vec3 new_dir;
-    new_dir.x = std::cos(radians(yaw)) * std::cos(radians(pitch));
-    new_dir.y = std::sin(radians(pitch));
-    new_dir.z = std::sin(radians(yaw)) * std::cos(radians(pitch));
+    float yawRad = radians(yaw);
+    float pitchRad = radians(pitch);
+    new_dir.x = std::cos(yawRad) * std::cos(pitchRad);
+    new_dir.y = std::sin(pitchRad);
+    new_dir.z = std::sin(yawRad) * std::cos(pitchRad);
 
     dir = normalize(new_dir);
-    right = normalize(cross(dir, up));
+    right = normalize(cross(dir, worldUp));
+    up = normalize(cross(right, dir));
 
     updateView();
 }
@@ -21,14 +24,14 @@ Camera::Camera()
         : dir(vec3(0., 0., -1.)), pitch(0.), yaw(0.)
 {
     pos = vec3(0., 0., 0.);
-    up = vec3(0., 1., 0.);
+    worldUp = vec3(0., 1., 0.);
 
-    right = normalize(cross(dir, up));
+    right = normalize(cross(dir, worldUp));
 }
 
 Camera::Camera(const vec3 &pos, const vec3 &up, float pitch, float yaw, float p_znear, float p_zfar, float p_fov,
                float p_aspectRatio)
-        : dir(vec3(0., 0., -1.)), pos(pos), up(up), pitch(pitch), yaw(yaw), m_zNear(p_znear), m_zFar(p_zfar), m_fov(p_fov), m_aspectRatio(p_aspectRatio)
+        : dir(vec3(0., 0., -1.)), pos(pos), worldUp(up), up(up), pitch(pitch), yaw(yaw), m_zNear(p_znear), m_zFar(p_zfar), m_fov(p_fov), m_aspectRatio(p_aspectRatio)
 {
     right = normalize(cross(dir, up));
     update_dir();
@@ -39,7 +42,7 @@ Camera::Camera(const vec3 &pos, const vec3 &up, float pitch, float yaw, float p_
 }
 
 glm::mat4 Camera::view() const {
-    return lookAt(pos, pos + dir, up);
+    return m_view;
 }
 
 glm::mat4 Camera::projection() const {
@@ -63,6 +66,7 @@ void Camera::setFov(float mFov) {
 
 void Camera::setAspectRatio(float mAspectRatio) {
     m_aspectRatio = mAspectRatio;
+    updateProjection();
 }
 
 void Camera::updateView() {
@@ -71,7 +75,15 @@ void Camera::updateView() {
 }
 
 void Camera::updateProjection() {
-    m_projection = glm::perspective(glm::radians(m_fov), m_aspectRatio, m_zNear, m_zFar);
+    float itan= 1 / tanf(glm::radians(m_fov) * 0.5f);
+    float id= 1 / (m_zNear - m_zFar);
+
+    m_projection = {
+            itan / m_aspectRatio, 0, 0, 0,
+            0, itan, 0, 0,
+            0, 0, (m_zFar + m_zNear) * id, -1,
+            0, 0, 2.f * m_zFar * m_zNear * id, 0
+    };
     updateFrustum();
 }
 

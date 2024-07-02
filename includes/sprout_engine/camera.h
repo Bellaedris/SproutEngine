@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <sprout_engine/shader.h>
 #include "inspectable.h"
+#include "icamera.h"
 
 using namespace glm;
 
@@ -42,12 +43,13 @@ struct Frustum
 const float CAMERA_SPEED = 5.f;
 const float CAMERA_SENSITIVITY = .1f;
 
-class Camera : public Inspectable
+class Camera : public Inspectable, public ICamera
 {
 protected:
 	glm::vec3 pos;
     glm::vec3 dir;
 	glm::vec3 up;
+    glm::vec3 worldUp;
 	glm::vec3 right;
 
     float m_zNear;
@@ -58,8 +60,8 @@ protected:
 	float pitch;
 	float yaw;
 
-    glm::mat4 m_view;
-    glm::mat4 m_projection;
+    glm::mat4 m_view{};
+    glm::mat4 m_projection{};
 
     Frustum m_frustum;
 
@@ -71,8 +73,8 @@ public:
 
     void drawInspector() override;
 
-	[[nodiscard]] glm::mat4 view() const;
-    [[nodiscard]] glm::mat4 projection() const;
+	[[nodiscard]] glm::mat4 view() const override;
+    [[nodiscard]] glm::mat4 projection() const override;
 
 	[[nodiscard]] inline glm::vec3 get_position() const { return pos; };
     [[nodiscard]] inline Frustum getFrustum() const { return m_frustum; };
