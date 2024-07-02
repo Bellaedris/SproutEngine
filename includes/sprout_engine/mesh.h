@@ -4,6 +4,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "bounds.h"
+#include "material.h"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -15,9 +16,11 @@ class Mesh
 protected:
 	std::vector<glm::vec3> m_positions; 
 	std::vector<glm::vec3> m_normals;
+    std::vector<glm::vec4> m_colors;
 	std::vector<glm::vec2> m_texcoords;
 	std::vector<unsigned int> m_indices;
 	std::vector<Texture> m_textures;
+    Material m_material;
 
 	AABB aabb;
 	//TODO move to the AABB class
@@ -31,12 +34,6 @@ protected:
 
 	bool update_data;
 
-protected:
-	inline size_t vertex_buffer_size() const { return m_positions.size() * sizeof(vec3); };
-	inline size_t normal_buffer_size() const { return m_normals.size() * sizeof(vec3); };
-	inline size_t texcoords_buffer_size() const { return m_texcoords.size() * sizeof(vec2); };
-	inline size_t indices_buffer_size() const { return m_indices.size() * sizeof(unsigned int); };
-
 public:
 	Mesh() : update_data(false)
 	{
@@ -46,8 +43,17 @@ public:
 	};
 
 	// read a Mesh from file
-	Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texcoords, const std::vector<unsigned int> &indices, const std::vector<Texture> &textures, const aiAABB &in_aabb)
-		: update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_indices(indices), m_textures(textures)
+	Mesh(
+            const std::vector<glm::vec3> &vertices,
+            const std::vector<glm::vec3>& normals,
+            const std::vector<glm::vec2>& texcoords,
+            const std::vector<glm::vec4>& colors,
+            const std::vector<unsigned int> &indices,
+            const std::vector<Texture> &textures,
+            const Material& material,
+            const aiAABB &in_aabb
+            )
+		: update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_colors(colors), m_indices(indices), m_textures(textures), m_material(material)
 	{
 		// Mesh buffers/vao
 		glGenVertexArrays(1, &vao);
@@ -109,11 +115,36 @@ public:
 		glBindVertexArray(0);
 	};
 
+    // read a Mesh from file
+    Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec2>& texcoords)
+            : update_data(false), m_positions(vertices), m_texcoords(texcoords)
+    {
+        // Mesh buffers/vao
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &buffer);
+        glGenBuffers(1, &index_buffer);
+
+        build_buffer();
+    };
+
 	//read-only accessors
-	const std::vector<glm::vec3>& positions() { return m_positions; };
-	const std::vector<glm::vec3>& normals() { return m_normals; };
-	const std::vector<glm::vec2>& texcoords() { return m_texcoords; };
-	const std::vector<unsigned int>& indices() { return m_indices; };
+	const std::vector<glm::vec3>& positions() const { return m_positions; };
+	const std::vector<glm::vec3>& normals() const { return m_normals; };
+    const std::vector<glm::vec4>& colors() const { return m_colors; };
+	const std::vector<glm::vec2>& texcoords() const { return m_texcoords; };
+	const std::vector<unsigned int>& indices() const { return m_indices; };
+
+    const glm::vec3& position(int p_index) const { return m_positions[p_index]; };
+    const glm::vec3& normal(int p_index) const { return m_normals[p_index]; };
+    const glm::vec4& color(int p_index) const { return m_colors[p_index]; };
+    const glm::vec2& texcoord(int p_index) const { return m_texcoords[p_index]; };
+    const unsigned int& indice(int p_index) const { return m_indices[p_index]; };
+
+    inline size_t vertex_buffer_size() const { return m_positions.size() * sizeof(vec3); };
+    inline size_t normal_buffer_size() const { return m_normals.size() * sizeof(vec3); };
+    inline size_t color_buffer_size() const { return m_colors.size() * sizeof(vec4); };
+    inline size_t texcoords_buffer_size() const { return m_texcoords.size() * sizeof(vec2); };
+    inline size_t indices_buffer_size() const { return m_indices.size() * sizeof(unsigned int); };
 
 	/**
 	 * \brief inserts a new vertex at the end of the array
@@ -141,6 +172,15 @@ public:
 		m_texcoords.push_back(uv);
 		update_data = true;
 	}
+
+    /**
+	 * \brief inserts a new color at the end of the array
+	 */
+    void color(glm::vec4 color)
+    {
+        m_colors.push_back(color);
+        update_data = true;
+    }
 
 	/**
 	 * \brief inserts the indices of a triangle in the structure using 3 vertex indices
@@ -203,22 +243,30 @@ public:
 
 		s.use();
 
-		// bind textures
-		unsigned int diffuse_id = 1;
-		unsigned int specular_id = 1;
-		for (int i = 0; i < m_textures.size(); i++)
-		{
-			glActiveTexture(GL_TEXTURE0 + i); //activate the correct texture unit
-			std::string number;
-			std::string name = m_textures[i].type;
-			if (name == "texture_diffuse")
-				number = std::to_string(diffuse_id++);
-			if (name == "texture_specular")
-				number = std::to_string(specular_id++);
-			s.uniform_data((name + number).c_str(), i); // give the correct location to each texture
-			glBindTexture(GL_TEXTURE_2D, m_textures[i].get_id());
-		}
-		glActiveTexture(GL_TEXTURE0);
+        // if there is no texture, use the material
+        if (m_textures.size() < 1)
+        {
+            s.uniform_data("has_texture", 1);
+            s.uniform_data("mat.diffuse", m_material.diffuse);
+        }
+        else {
+            //render using the available textures
+            s.uniform_data("has_texture", 0);
+            unsigned int diffuse_id = 1;
+            unsigned int specular_id = 1;
+            for (int i = 0; i < m_textures.size(); i++) {
+                glActiveTexture(GL_TEXTURE0 + i); //activate the correct texture unit
+                std::string number;
+                std::string name = m_textures[i].type;
+                if (name == "texture_diffuse")
+                    number = std::to_string(diffuse_id++);
+                if (name == "texture_specular")
+                    number = std::to_string(specular_id++);
+                s.uniform_data((name + number).c_str(), i); // give the correct location to each texture
+                glBindTexture(GL_TEXTURE_2D, m_textures[i].get_id());
+            }
+            glActiveTexture(GL_TEXTURE0);
+        }
 
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
@@ -231,17 +279,9 @@ public:
 	 * \param c a camera to get a view and a projection
 	 * \param t a texture to put on the Mesh
 	 */		
-	void draw_flat(Shader& s)
-	{
-		if (update_data)
-			build_buffer();
+	void draw_flat(Shader& s);
 
-		s.use();
-
-		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-	};
+    void draw_strip(Shader &s);
 
 	void draw(Shader &s, const Frustum &frustum, const Transform& transform)
 	{
@@ -283,4 +323,10 @@ public:
 		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 	};
+
+    /*!
+     * Generates a plane that takes the size of the frustum
+     * @return a mesh representing a plane from [-1;-1] to [1;1]
+     */
+    static Mesh generatePlane();
 };
