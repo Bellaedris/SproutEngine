@@ -118,6 +118,11 @@ public:
 		glUniform4f(get_location(name), x, y, z, w);
 	}
 
+    void uniform_data(const std::string& name, const glm::vec4& data) const
+    {
+        glUniform4f(get_location(name), data.x, data.y, data.z, data.w);
+    }
+
 	void uniform_data(const std::string &name, const float x, const float y, const float z) const
 	{
 		glUniform3f(get_location(name), x, y, z);
