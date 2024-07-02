@@ -16,7 +16,7 @@ float SproutApp::fov = 45.f;
 bool SproutApp::firstMouse = true;
 
 SproutApp::SproutApp(int width, int height, int major, int minor)
-        : delta_time(0.f), last_frame(0.f)
+        : delta_time(0.f), last_frame(0.f), m_width(width), m_height(height)
 {
     window = create_window(width, height, major, minor);
 
@@ -137,4 +137,16 @@ void SproutApp::scroll_callback(GLFWwindow *w, double xoffset, double yoffset) {
 
 void SproutApp::setActiveCamera(Camera *p_camera) {
     cam = p_camera;
+}
+
+glm::mat4 SproutApp::viewport() const {
+    float w = (float)m_width / 2.f;
+    float h = (float)m_height / 2.f;
+
+    return {
+            w,  0.,  0.,  0,
+            0,  h,  0,   0,
+            0., 0., .5f, 0,
+            w,  h,  .5f,   1
+            };
 }

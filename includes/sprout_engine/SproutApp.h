@@ -17,6 +17,8 @@ protected:
 	Window window;
 	Camera* cam;
 
+    int m_width, m_height;
+
 	float delta_time;
 	float last_frame;
 
@@ -42,10 +44,19 @@ public:
 
 	int run();
 
+    int width() const { return m_width; }
+    int height() const { return m_height; }
+
 	virtual int init() = 0;
 	virtual int render() = 0;
 	virtual int quit() = 0;
 	void prerender();
+
+    /*!
+     * Return the transform that goes from projective to viewport domain
+     * @return a transform that translates coordinates in the viewport domain, depending on the size of the window
+     */
+    glm::mat4 viewport() const;
 
     void setActiveCamera(Camera* p_camera);
 
