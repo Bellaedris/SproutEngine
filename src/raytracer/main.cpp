@@ -4,74 +4,20 @@
 #include <sprout_engine/texture.h>
 #include "sprout_engine/line.h"
 #include <sprout_engine/orbiter.h>
+#include <sprout_engine/ray_utils/ray.h>
+
+Color rayColor(const Ray& p_ray)
+{
+    float y = (p_ray.getDirection().y + 1.f) * .5f;
+    return lerp(Color(1.f, 1.f, 1.f, 1.f), Color(.5f, .7f, 1.f, 1.f), y);
+}
+
+float intersectSphere(const glm::vec3 p_center, float radius, const Ray& ray)
+{
+    glm::vec3 a = 
+}
 
 std::string resources_path = "../../resources/";
-
-struct Hit
-{
-    float d;
-    float u;
-    float v;
-
-    Hit() : d(std::numeric_limits<float>::max()), u(0), v(0) {}
-    Hit(float d, float u, float v) : d(d), u(u), v(v) {}
-
-    operator bool() const {
-        return d != std::numeric_limits<float>::max();
-    }
-};
-
-struct Ray
-{
-    glm::vec3 origin;
-    glm::vec3 direction;
-};
-
-struct Triangle
-{
-    //! vertex a of the triangle
-    glm::vec3 a;
-    //! two edges formed by the vertex a and the other 2 vertices
-    glm::vec3 edge1;
-    glm::vec3 edge2;
-
-    //! normals at the 3 vertices
-    glm::vec3 na, nb, nc;
-
-    Triangle(const vec3 &a, const vec3 &edge1, const vec3 &edge2, const vec3 &na, const vec3 &nb, const vec3 &nc)
-    : a(a), edge1(edge1), edge2(edge2), na(na), nb(nb), nc(nc) {}
-
-    /*!
-     * \brief checks the intersection between this triangle and a ray,
-     * from the origin to a distance htmax.
-     * @param ray a ray
-     * @param htmax if an intersection exists at a distance > htmax, discard it.
-     * @return a struct Hit containing the infos on the hit.
-     */
-    Hit intersect(const Ray &ray, const float htmax) const
-    {
-        glm::vec3 pvec = glm::cross(ray.direction, edge2);
-        float det = dot(edge1, pvec);
-
-        float inv_det = 1.f / det;
-        glm::vec3 tvec(ray.origin - a);
-
-        float u = dot(tvec, pvec) * inv_det;
-        if (u < 0 || u > 1)
-            return {};
-
-        glm::vec3 qvec = cross(tvec, edge1);
-        float v = dot(ray.direction, qvec) * inv_det;
-        if (v < 0 || u + v > 1)
-            return {};
-
-        float t = dot(edge2, qvec) * inv_det;
-        if (t < 0 || t > htmax)
-            return {};
-
-        return {t, u, v};
-    }
-};
 
 class Raytracer : public SproutApp
 {
@@ -87,12 +33,6 @@ public:
         m_shader = Shader("texture.vs", "texture.fs");
         m_debugShader = Shader("default.vs", "default.fs");
 
-        m_camera.lookat({0, 2, 0}, 15.f);
-        m_camera.rotation(0, 180);
-        m_camera.projection((float)width() / (float)height(), 70.f);
-
-        m_lines = std::make_unique<LineRenderer>(cam);
-
         glViewport(0, 0, width(), height());
         glClearColor(.1f, .1f, .1f, 1.f);
         return 0;
@@ -100,14 +40,6 @@ public:
 
     int render() override
     {
-        // deplace la camera
-        if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS)
-            m_camera.rotation(xoffset * delta_time * 5.f, yoffset * delta_time * 5.f);      // tourne autour de l'objet
-        if (glfwGetKey(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
-            m_camera.translation((float) xoffset / (float) width(), (float) yoffset / (float) height()); // deplace le point de rotation
-        else if (glfwGetKey(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
-            m_camera.move(yoffset);           // approche / eloigne l'objet
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // IMGUI
@@ -131,7 +63,7 @@ public:
             m_texture->use();
             m_shader.use();
 
-            m_quad.draw_strip(m_shader);
+            m_quad.draw(m_shader);
         }
         else
         {
@@ -141,14 +73,6 @@ public:
             m_model.draw(m_debugShader);
 
             glm::mat4 screenToWorld = glm::inverse(viewport() * cam->projection() * cam->view());
-
-            m_lines->clear();
-            m_lines->addLine({screenToWorld * glm::vec4(0, 0, 0, 1)}, {screenToWorld * glm::vec4(0, 0, 1, 1)});
-            m_lines->addLine({screenToWorld * glm::vec4(width(), 0, 0, 1)}, {screenToWorld * glm::vec4(width(), 0, 1, 1)});
-            m_lines->addLine({screenToWorld * glm::vec4(0, height(), 0, 1)}, {screenToWorld * glm::vec4(0, height(), 1, 1)});
-            m_lines->addLine({screenToWorld * glm::vec4(width(), height(), 0, 1)}, {screenToWorld * glm::vec4(width(), height(), 1, 1)});
-
-            m_lines->draw();
         }
 
         ImGui::Render();
@@ -168,29 +92,21 @@ public:
 
     void raytrace()
     {
-        std::vector<Triangle> triangles;
-
-        //build the triangle structure
-        for(const Mesh& mesh : m_model.getMeshes())
-            for(size_t triId = 0; triId + 2 < mesh.indices().size(); triId += 3)
-            {
-                int ia = mesh.indice(triId);
-
-                glm::vec3 a = mesh.position(ia);
-                glm::vec3 b = mesh.position(mesh.indice(triId + 1));
-                glm::vec3 c = mesh.position(mesh.indice(triId + 2));
-
-                //TODO don't forget to inverse transpose the normal on GPU
-                glm::vec3 na = mesh.normal(mesh.indice(triId));
-                glm::vec3 nb = mesh.normal(mesh.indice(triId + 1));
-                glm::vec3 nc = mesh.normal(mesh.indice(triId + 2));
-
-                triangles.emplace_back(a, glm::vec3(b - a), glm::vec3(c - a), na, nb, nc);
-            }
-
         Image result(width(), height());
 
-        glm::mat4 screenToWorld = glm::inverse(viewport() * cam->projection() * cam->view());
+        auto focalLength = 1.0;
+        auto viewportHeight = 2.0;
+        auto viewportWidth = viewportHeight * (double(width()) / height());
+        auto cameraCenter = glm::vec3(0, 0, 0);
+
+        glm::vec3 viewportU(width(), 0, 0);
+        glm::vec3 viewportV(0, -height(), 0);
+
+        glm::vec3 deltaU = viewportU / (float)width();
+        glm::vec3 deltaV = viewportV / (float)height();
+
+        glm::vec3 viewportUpperLeft = cameraCenter - glm::vec3(0, 0, focalLength) - viewportU / 2.f - viewportV / 2.f;
+        glm::vec3 pixelOrigin = viewportUpperLeft - 0.5f * (deltaU + deltaV);
 
         // for each pixel of the camera, fire a ray
         #pragma omp parallel for
@@ -198,35 +114,14 @@ public:
         {
             for(int j = 0; j < height(); j++)
             {
-                glm::vec4 origin = screenToWorld * glm::vec4(i, j, 0, 1);
-                glm::vec4 direction = (screenToWorld * glm::vec4(i, j, 1, 1)) - origin;
-                Ray r{origin, direction};
+                glm::vec3 currentPixel = pixelOrigin + (float)i * deltaU + (float)j * deltaV;
 
-                Hit closest;
-
-                // iterate over all triangles of the mesh to render. If it hits, we can return the color of the pixel
-                for(const Triangle& triangle : triangles)
-                {
-                    if (Hit h = triangle.intersect(r, closest.d))
-                    {
-                        if (h.d < closest.d)
-                            closest = h;
-                    }
-                }
-
-                if (closest)
-                {
-                    //get barycentric coord
-                    float w = 1 - closest.u - closest.v;
-
-                    result(i, j) = Color(w, closest.u, closest.v, 1.f);
-                }
+                Ray r(cameraCenter, (currentPixel - cameraCenter));
+                result(i, j) = rayColor(r);
             }
         }
 
         result.write("raytrace_result.png");
-
-
     }
 
 protected:
@@ -235,9 +130,6 @@ protected:
     Shader m_shader;
     Shader m_debugShader;
     std::unique_ptr<Texture> m_texture;
-    Orbiter m_camera;
-
-    std::unique_ptr<LineRenderer> m_lines;
 };
 
 int main()
