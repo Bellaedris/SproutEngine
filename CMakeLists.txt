@@ -85,7 +85,7 @@ add_library(GLAD "src/glad.c")
 set(LIBS ${LIBS} GLAD)
 
 #core sprout engine target
-file(GLOB CORE_SOURCES "includes/sprout_engine/*.cpp")
+file(GLOB_RECURSE CORE_SOURCES "includes/sprout_engine/*.cpp")
 
 add_library(
         SproutEngineCore
