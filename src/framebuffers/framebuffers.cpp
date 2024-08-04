@@ -35,7 +35,7 @@ public:
 
         shadowMapCamera = Camera(glm::vec3(0.f, 0.f, 6.f), glm::vec3(0.f, 1.f, 0.f), -90.f, 0.f, 0.1f, 1000.f, fov, 16.f / 9.f);
 
-        light = DirectionalLight(glm::vec3(0.f, -1.f, 0.f), glm::vec3(.1, .1, .1), glm::vec3(1., 1., 1.), glm::vec3(.9, .9, .9));
+        light = DirectionalLight(glm::vec3(0.f, -1.f, 1.f), glm::vec3(.1, .1, .1), glm::vec3(1., 1., 1.), glm::vec3(.9, .9, .9));
 
         // post-processing framebuffer/texture
         glGenFramebuffers(1, &fbo);
@@ -53,6 +53,10 @@ public:
 
         light_fb_depth = Texture(1366, 768, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, "texture_diffuse", GL_CLAMP_TO_BORDER);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         //set screen buffer/vao
         glGenVertexArrays(1, &vao);
@@ -83,85 +87,83 @@ public:
         return 0;
     }
 
-    int render() override
-    {
+    int render() override {
         glEnable(GL_DEPTH_TEST);
         glClearColor(.1f, .1f, .1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // IMGUI
-        // inspector
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        ImGui::Begin("Inspector");
-        // mainCamera inspector
-        mainCamera.drawInspector();
-        for(auto& entity : m_entities)
         {
-            entity.drawInspector();
-        }
-        ImGui::End();
+            // inspector
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            ImGui::Begin("Inspector");
+            // mainCamera inspector
+            mainCamera.drawInspector();
+            for (auto &entity: m_entities) {
+                entity.drawInspector();
+            }
+            ImGui::End();
 
-        // general settings
-        ImGui::Begin("Parameters");
-        if (ImGui::CollapsingHeader("performances"))
-        {
-            ImGui::PlotLines("framerate", framerate, IM_ARRAYSIZE(framerate), values_offset, "framerate", 0.f, 240, ImVec2(0, 80.f));
-            int milli = (int)(gpu_last_frame / 1000000);
-            int micro = (int)((gpu_last_frame / 1000) % 1000);
-            ImGui::Text(
-                "cpu %03dms\ngpu %02dms % 03dus",
-                cpu_last_frame, 
-                milli, micro
-            );
-        }
-        if (ImGui::CollapsingHeader("Shadow mapping"))
-        {
-            ImGui::InputFloat2("Resolution", shadowmapRes);
-            ImGui::InputFloat3("Shadow camera offset", shadowCamOffset);
-            ImGui::InputFloat("Orthographic zoom", &shadowMapOrthoSize);
-            if (ImGui::Button("Update")) {
-                glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
-                light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, "depthMap", GL_CLAMP_TO_BORDER);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
+            // general settings
+            ImGui::Begin("Parameters");
+            if (ImGui::CollapsingHeader("performances")) {
+                ImGui::PlotLines("framerate", framerate, IM_ARRAYSIZE(framerate), values_offset, "framerate", 0.f, 240,
+                                 ImVec2(0, 80.f));
+                int milli = (int) (gpu_last_frame / 1000000);
+                int micro = (int) ((gpu_last_frame / 1000) % 1000);
+                ImGui::Text(
+                        "cpu %03dms\ngpu %02dms % 03dus",
+                        cpu_last_frame,
+                        milli, micro
+                );
             }
-        }
-        if (ImGui::CollapsingHeader("Parameters"))
-        {
-            ImGui::Checkbox("Wireframe", &wireframe_mode);
-            ImGui::Checkbox("Show AABB", &show_aabb);
-            ImGui::Checkbox("Show before post process", &noPostProcess);
-            ImGui::Checkbox("Draw skybox", &drawSkybox);
-            ImGui::Checkbox("Shadow depth mode", &shadowDepthMode);
-            if(ImGui::Checkbox("useLightCamera", &controlLightCamera))
-            {
-                if (controlLightCamera)
-                    setActiveCamera(&shadowMapCamera);
-                else
-                    setActiveCamera(&mainCamera);
+            if (ImGui::CollapsingHeader("Shadow mapping")) {
+                ImGui::InputFloat2("Resolution", shadowmapRes);
+                ImGui::InputFloat3("Shadow camera offset", shadowCamOffset);
+                ImGui::InputFloat("Orthographic zoom", &shadowMapOrthoSize);
+                if (ImGui::Button("Update")) {
+                    glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
+                    light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT,
+                                             "depthMap", GL_REPEAT, GL_NEAREST);
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
+                }
             }
-            ImGui::InputFloat("FoV value", &fov, 1.f);
-            ImGui::InputFloat("Aspect ratio w", &w, 1.f);
-            ImGui::InputFloat("Aspect ratio h", &h, 1.f);
-            ImGui::InputFloat3("Position of the object", objectPos);
-            ImGui::InputFloat3("Direction of the light", lightDir);
-            ImGui::ColorEdit3("light color ambiant", ambiant);
-            ImGui::ColorEdit3("light color diffuse", diffuse);
-            ImGui::ColorEdit3("light color specular", specular);
-            if (ImGui::Button("update light")) {
-                light.set_direction(lightDir);
-                light.set_colors(ambiant, diffuse, specular);
+            if (ImGui::CollapsingHeader("Parameters")) {
+                ImGui::Checkbox("Wireframe", &wireframe_mode);
+                ImGui::Checkbox("Show AABB", &show_aabb);
+                ImGui::Checkbox("Show before post process", &noPostProcess);
+                ImGui::Checkbox("Draw skybox", &drawSkybox);
+                ImGui::Checkbox("Shadow depth mode", &shadowDepthMode);
+                if (ImGui::Checkbox("useLightCamera", &controlLightCamera)) {
+                    if (controlLightCamera)
+                        setActiveCamera(&shadowMapCamera);
+                    else
+                        setActiveCamera(&mainCamera);
+                }
+                ImGui::InputFloat("FoV value", &fov, 1.f);
+                ImGui::InputFloat("Aspect ratio w", &w, 1.f);
+                ImGui::InputFloat("Aspect ratio h", &h, 1.f);
+                ImGui::InputFloat3("Position of the object", objectPos);
+                ImGui::InputFloat3("Direction of the light", lightDir);
+                ImGui::ColorEdit3("light color ambiant", ambiant);
+                ImGui::ColorEdit3("light color diffuse", diffuse);
+                ImGui::ColorEdit3("light color specular", specular);
+                if (ImGui::Button("update light")) {
+                    light.set_direction(lightDir);
+                    light.set_colors(ambiant, diffuse, specular);
+                }
+                if (ImGui::Button("reload shader")) {
+                    s = Shader("default.vs", "default.fs");
+                    s_post_process = Shader("postprocess.vs", "postprocess.fs");
+                    s_skybox = Shader("skybox.vs", "skybox.fs");
+                }
+                ImGui::InputFloat("rotation", &rotation, 1.f);
             }
-            if (ImGui::Button("reload shader")) {
-                s = Shader("default.vs", "default.fs");
-                s_post_process = Shader("postprocess.vs", "postprocess.fs");
-                s_skybox = Shader("skybox.vs", "skybox.fs");
-            }
-            ImGui::InputFloat("rotation", &rotation, 1.f);
-        }
 
-        ImGui::End();
+            ImGui::End();
+        }
 
         //draw the scene from the light pov
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, light_fb);
@@ -186,7 +188,7 @@ public:
 
         //then draw the scene in the camera pov
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-        glViewport(0, 0, 1366, 768);
+        glViewport(0, 0, width(), height());
         glClearColor(.1f, .1f, .1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -194,7 +196,7 @@ public:
 
         glm::mat4 projection = cam->projection();
 
-        glm::mat4 mvpMatrix; // = projection * view * model;
+        glm::mat4 viewMatrix, projectionMatrix; // = projection * view * model;
         glm::mat4 inverseViewMatrix, normalMatrix, lightspaceMatrix, model;
 
         s.use();
@@ -202,14 +204,16 @@ public:
 
         for(auto& entity : m_entities) {
             model = entity.getTransform().getModelMatrix();
+            viewMatrix = cam->view();
+            projectionMatrix = cam->projection();
             lightspaceMatrix = light_projection * light_view * model;
 
             normalMatrix = glm::transpose(glm::inverse(model));
-            mvpMatrix = projection * view * model;
             inverseViewMatrix = glm::inverse(view);
             s.uniform_data("modelMatrix", model);
             s.uniform_data("normalMatrix", normalMatrix);
-            s.uniform_data("mvpMatrix", mvpMatrix);
+            s.uniform_data("viewMatrix", viewMatrix);
+            s.uniform_data("projectionMatrix", projectionMatrix);
             s.uniform_data("inverseViewMatrix", inverseViewMatrix);
             s.uniform_data("lightspaceMatrix", lightspaceMatrix);
             if(shadowDepthMode)
@@ -217,7 +221,7 @@ public:
             else
                 s.uniform_data("drawDepth", 0);
 
-            s.uniform_data("depthMap", 2);
+            s.uniform_data("shadowmap", 2);
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
             entity.draw(s, cam->getFrustum(), entity.getTransform());

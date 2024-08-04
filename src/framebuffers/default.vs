@@ -12,7 +12,8 @@ out vec4 lightspacePos;
 
 uniform mat4 normalMatrix;
 uniform mat4 modelMatrix;
-uniform mat4 mvpMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
 uniform mat4 inverseViewMatrix;
 uniform mat4 lightspaceMatrix;
 
@@ -25,6 +26,6 @@ void main()
 	norm = mat3(normalMatrix) * normal; // should be computed on the CPU
 	position = modelMatrix * vec4(pos, 1.f);
 	cameraPos = inverseViewMatrix * vec4(0.f, 0.f, 0.f, 1.f);
-	lightspacePos = lightspaceMatrix * vec4(pos, 1.f);
-	gl_Position = mvpMatrix * vec4(pos, 1.f);
+	lightspacePos = lightspaceMatrix * position;
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(pos, 1.f);
 }

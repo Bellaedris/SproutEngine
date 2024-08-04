@@ -39,7 +39,6 @@ SproutApp::SproutApp(int width, int height, int major, int minor)
 }
 
 SproutApp::~SproutApp() {
-    delete cam;
     glfwTerminate();
 }
 

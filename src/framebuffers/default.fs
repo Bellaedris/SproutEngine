@@ -12,6 +12,7 @@ uniform sampler2D diffuse_texture1;
 uniform sampler2D specular_texture1;
 
 uniform sampler2D shadowmap;
+uniform int drawDepth;
 
 struct DirectionalLight
 {
@@ -116,10 +117,10 @@ float computeShadow(vec4 lightspace_pos)
 	//gl_Position does this automatically but not our out param
 	vec3 projCoord = lightspace_pos.xyz / lightspace_pos.w;
 
-	projCoord = (projCoord + 1.f) / 2.f; // from [-1;1] to [0;1]
+	projCoord = projCoord * 0.5 + 0.5; // from [-1;1] to [0;1]
 
 	if (projCoord.z > 1.f)
-		return .1f;
+		return 1.f;
 
 	float bias = 0.005;
 	// in the shadow if current pixel is in front of shadowmap
@@ -128,16 +129,29 @@ float computeShadow(vec4 lightspace_pos)
 
 void main()
 {
-	vec3 color = texture(diffuse_texture1, texCoord).xyz;
+	if (drawDepth == 1)
+	{
+		//gl_Position does this automatically but not our out param
+		vec3 projCoord = lightspacePos.xyz / lightspacePos.w;
 
-	vec3 normal = normalize(norm);
-	vec3 viewDir = normalize(cameraPos.xyz - position.xyz);
+		projCoord = projCoord * .5 + .5;// from [-1;1] to [0;1]
 
-	float shadow = computeShadow(lightspacePos);
+		float depth = texture(shadowmap, projCoord.xy).r;
+		FragColor = vec4(vec3(depth), 1.f);
+	}
+	else
+	{
+		vec3 color = texture(diffuse_texture1, texCoord).xyz;
 
-	vec3 finalColor = calculateDirectionalLight(dirLights[0], normal, viewDir, color, shadow);
-	//finalColor += calculatePointLight(PointLight[0], normal, viewDir, color);
-	//finalcolor += calculateSpotLight(SpotLight[0], normal, viewDir, color);
+		vec3 normal = normalize(norm);
+		vec3 viewDir = normalize(cameraPos.xyz - position.xyz);
 
-	FragColor = vec4(finalColor, 1.f);
+		float shadow = computeShadow(lightspacePos);
+
+		vec3 finalColor = calculateDirectionalLight(dirLights[0], normal, viewDir, color, shadow);
+		//finalColor += calculatePointLight(PointLight[0], normal, viewDir, color);
+		//finalcolor += calculateSpotLight(SpotLight[0], normal, viewDir, color);
+
+		FragColor = vec4(finalColor, 1.f);
+	}
 }
