@@ -12,7 +12,7 @@ class Sphere : public Traceable
 {
 public:
     Sphere(const glm::vec3& p_center, float p_radius);
-    bool hit(const Ray &r, float tMin, float tMax, HitInfo &hitInfo) const override;
+    bool hit(const Ray &r, Interval<float> p_t, HitInfo &hitInfo) const override;
 
 private:
     glm::vec3 m_center;

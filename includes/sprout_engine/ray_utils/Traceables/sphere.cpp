@@ -9,7 +9,7 @@ Sphere::Sphere(const glm::vec3 &p_center, float p_radius)
     , m_radius(std::fmax(0.f, p_radius))
     {}
 
-bool Sphere::hit(const Ray &r, float tMin, float tMax, HitInfo &hitInfo) const {
+bool Sphere::hit(const Ray &r, Interval<float> p_t, HitInfo &hitInfo) const {
     glm::vec3 oc = m_center - r.getOrigin();
 
     float a = glm::dot(r.getDirection(), r.getDirection());
@@ -23,16 +23,28 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitInfo &hitInfo) const {
     // find nearest result in range
     float sqrtDelta = std::sqrtf(delta);
     float root = (h - sqrtDelta) / a;
-    if (root < tMin || root > tMax)
+    if (!p_t.surrounds(root))
     {
         root = (h + sqrtDelta) / a;
-        if (root < tMin || root > tMax)
+        if (!p_t.surrounds(root))
             return false;
     }
 
     hitInfo.m_distance = root;
     hitInfo.m_intersection = r.at(root);
-    hitInfo.m_normal = (hitInfo.m_intersection - m_center) / m_radius;
+
+    glm::vec3 norm = (hitInfo.m_intersection - m_center) / m_radius;
+    // opposite side, we are inside the sphere
+    if (glm::dot(norm, r.getDirection()) > 0.f) {
+        hitInfo.m_normal = -norm;
+        hitInfo.m_frontFace = false;
+    }
+    // same side, we are outside
+    else
+    {
+        hitInfo.m_normal = norm;
+        hitInfo.m_frontFace = true;
+    }
 
     return true;
 }

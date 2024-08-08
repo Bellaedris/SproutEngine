@@ -6,20 +6,23 @@
 #define SPROUTENGINE_TRACEABLE_H
 
 #include "sprout_engine/ray_utils/ray.h"
+#include "sprout_engine/interval.h"
 
 struct HitInfo
 {
-    glm::vec3 m_intersection;
-    glm::vec3 m_normal;
-    float m_distance;
-
-    HitInfo(const glm::vec3& p_intersect, const glm::vec3& p_norm, float p_dist)
-        : m_intersection(p_intersect), m_normal(p_norm), m_distance(p_dist) {}
+    //! intersection point
+    glm::vec3 m_intersection{};
+    //! normal at the intersection point
+    glm::vec3 m_normal{};
+    //! distance at which the intersection happened
+    float m_distance{};
+    //! true if front, false otherwise
+    bool m_frontFace{};
 };
 
 class Traceable {
 public:
-    virtual bool hit(const Ray& r, float tMin, float tMax, HitInfo &hitInfo) const = 0;
+    virtual bool hit(const Ray& r, Interval<float> p_t, HitInfo &hitInfo) const = 0;
 };
 
 
