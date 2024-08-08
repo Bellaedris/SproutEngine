@@ -19,7 +19,7 @@ public:
     [[nodiscard]] glm::vec3 getOrigin() const {return m_origin;}
     [[nodiscard]] glm::vec3 getDirection() const {return m_direction;}
 
-    glm::vec3 at(float t);
+    glm::vec3 at(float t) const;
 };
 
 
