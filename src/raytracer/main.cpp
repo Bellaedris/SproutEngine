@@ -2,20 +2,10 @@
 
 #include <sprout_engine/model.h>
 #include <sprout_engine/texture.h>
-#include "sprout_engine/line.h"
-#include <sprout_engine/orbiter.h>
-#include <sprout_engine/ray_utils/ray.h>
-
-Color rayColor(const Ray& p_ray)
-{
-    float y = (p_ray.getDirection().y + 1.f) * .5f;
-    return lerp(Color(1.f, 1.f, 1.f, 1.f), Color(.5f, .7f, 1.f, 1.f), y);
-}
-
-float intersectSphere(const glm::vec3 p_center, float radius, const Ray& ray)
-{
-    glm::vec3 a = 
-}
+#include <sprout_engine/line.h>
+#include "sprout_engine/ray_utils/traceableManager.h"
+#include <sprout_engine/ray_utils/Traceables/sphere.h>
+#include <sprout_engine/interval.h>
 
 std::string resources_path = "../../resources/";
 
@@ -33,6 +23,13 @@ public:
         m_shader = Shader("texture.vs", "texture.fs");
         m_debugShader = Shader("default.vs", "default.fs");
 
+        //add traceable objects
+        m_traceables.setAspectRatio((float)width() / (float)height());
+        m_traceables.setImageWidth(width());
+
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, 0, -1), .5));
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100));
+
         glViewport(0, 0, width(), height());
         glClearColor(.1f, .1f, .1f, 1.f);
         return 0;
@@ -49,7 +46,7 @@ public:
         ImGui::Begin("Parameters");
         if (ImGui::Button("Raytrace"))
         {
-            raytrace();
+            m_traceables.render();
         }
         if (ImGui::Button("Raster"))
         {
@@ -90,46 +87,14 @@ public:
         return 0;
     }
 
-    void raytrace()
-    {
-        Image result(width(), height());
-
-        auto focalLength = 1.0;
-        auto viewportHeight = 2.0;
-        auto viewportWidth = viewportHeight * (double(width()) / height());
-        auto cameraCenter = glm::vec3(0, 0, 0);
-
-        glm::vec3 viewportU(width(), 0, 0);
-        glm::vec3 viewportV(0, -height(), 0);
-
-        glm::vec3 deltaU = viewportU / (float)width();
-        glm::vec3 deltaV = viewportV / (float)height();
-
-        glm::vec3 viewportUpperLeft = cameraCenter - glm::vec3(0, 0, focalLength) - viewportU / 2.f - viewportV / 2.f;
-        glm::vec3 pixelOrigin = viewportUpperLeft - 0.5f * (deltaU + deltaV);
-
-        // for each pixel of the camera, fire a ray
-        #pragma omp parallel for
-        for(int i = 0; i < width(); i++)
-        {
-            for(int j = 0; j < height(); j++)
-            {
-                glm::vec3 currentPixel = pixelOrigin + (float)i * deltaU + (float)j * deltaV;
-
-                Ray r(cameraCenter, (currentPixel - cameraCenter));
-                result(i, j) = rayColor(r);
-            }
-        }
-
-        result.write("raytrace_result.png");
-    }
-
 protected:
     Model m_model;
     Mesh m_quad;
     Shader m_shader;
     Shader m_debugShader;
     std::unique_ptr<Texture> m_texture;
+
+    TraceableManager m_traceables;
 };
 
 int main()
