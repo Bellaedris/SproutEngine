@@ -4,9 +4,10 @@
 
 #include "sphere.h"
 
-Sphere::Sphere(const glm::vec3 &p_center, float p_radius)
+Sphere::Sphere(const glm::vec3 &p_center, float p_radius, const std::shared_ptr<RaytracingMaterial>& p_material)
     : m_center(p_center)
     , m_radius(std::fmax(0.f, p_radius))
+    , m_material(p_material)
     {}
 
 bool Sphere::hit(const Ray &r, Interval<float> p_t, HitInfo &hitInfo) const {
@@ -32,6 +33,7 @@ bool Sphere::hit(const Ray &r, Interval<float> p_t, HitInfo &hitInfo) const {
 
     hitInfo.m_distance = root;
     hitInfo.m_intersection = r.at(root);
+    hitInfo.m_mat = m_material;
 
     glm::vec3 norm = (hitInfo.m_intersection - m_center) / m_radius;
     // opposite side, we are inside the sphere

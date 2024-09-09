@@ -5,8 +5,11 @@
 #ifndef SPROUTENGINE_TRACEABLE_H
 #define SPROUTENGINE_TRACEABLE_H
 
+#include <memory>
 #include "sprout_engine/ray_utils/ray.h"
 #include "sprout_engine/interval.h"
+
+class RaytracingMaterial;
 
 struct HitInfo
 {
@@ -18,6 +21,8 @@ struct HitInfo
     float m_distance{};
     //! true if front, false otherwise
     bool m_frontFace{};
+    //! a material representing how the surface reponds to light
+    std::shared_ptr<RaytracingMaterial> m_mat;
 };
 
 class Traceable {
