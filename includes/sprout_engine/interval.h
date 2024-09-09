@@ -20,19 +20,47 @@ public:
 
     Interval(T p_min, T p_max) : m_min(p_min), m_max(p_max) {}
 
+    /*!
+     * \brief computes the size of the interval: max - min
+     * \return the size of the interval
+     */
     T size() const
     {
         return (m_max - m_min);
     }
 
+    /*!
+     * \brief Checks if p_x is inside the closed interval
+     * \param p_x number to check
+     * \return true if p_x is inside the closed interval, false otherwise
+     */
     bool contains(T p_x) const
     {
         return p_x >= m_min && p_x <= m_max;
     }
 
+    /*!
+     * \brief Checks if p_x is inside the open interval
+     * \param p_x number to check
+     * \return true if p_x is in the open interval, false otherwise
+     */
     bool surrounds(T p_x) const
     {
         return p_x > m_min && p_x < m_max;
+    }
+
+    /*!
+     * \brief Clamps a value in the interval
+     * \param p_x value to clamp
+     * \return min of the interval if p_x is below, max if it is above, p_x otherwise
+     */
+    T clamp(T p_x) const
+    {
+        if (p_x < m_min)
+            return m_min;
+        if (p_x > m_max)
+            return m_max;
+        return p_x;
     }
 
     static const Interval empty, universe;
