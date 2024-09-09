@@ -3,12 +3,18 @@
 //
 
 #include <iostream>
+
+
 #include "traceableManager.h"
 #include "sprout_engine/image.h"
 
+#include <glm/gtc/random.hpp>
+
 TraceableManager::TraceableManager(std::vector<std::shared_ptr<Traceable>> p_traceables)
      : m_traceables(std::move(p_traceables))
-     {}
+     , m_distribution(0.f, 1.f)
+     , m_generator(std::random_device{}())
+    {}
 
 
 
@@ -54,10 +60,12 @@ void TraceableManager::render()
     {
         for(int j = 0; j < m_imageHeight; j++)
         {
-            glm::vec3 currentPixel = m_pixelOrigin + (float)i * m_deltaU + (float)j * m_deltaV;
-
-            Ray r(m_center, (currentPixel - m_center));
-            result(i, j) = rayColor(r);
+            Color pixelColor{0.f, 0.f, 0.f ,0.f};
+            for(int sample = 0; sample < m_samplesPerPixel; sample++)
+            {
+                pixelColor += rayColor(generateRayInPixel(i, j), m_maxBounces);
+            }
+            result(i, j) = pixelColor / (float)m_samplesPerPixel;
         }
     }
 
@@ -84,11 +92,23 @@ void TraceableManager::initialize()
     m_pixelOrigin = viewportUpperLeft - 0.5f * (m_deltaU + m_deltaV);
 }
 
-Color TraceableManager::rayColor(const Ray &p_ray)
+Color TraceableManager::rayColor(const Ray &p_ray, int p_depth)
 {
+    if(p_depth <= 0)
+        return {0.f, 0.f, 0.f, 1.f};
+
     HitInfo l_hit;
-    if (hit(p_ray, {0, std::numeric_limits<float>::max()}, l_hit))
-        return .5f * Color(l_hit.m_normal.x + 1.f, l_hit.m_normal.y + 1.f, l_hit.m_normal.z + 1.f, 1.f);
+    if (hit(p_ray, {0.0001, std::numeric_limits<float>::max()}, l_hit))
+    {
+        // bounces the ray randomly
+        // this is lambertian non-uniform, get more rays in the normal direction by just adding a random vector to the norm
+        glm::vec3 l_bounceDir = l_hit.m_normal + glm::sphericalRand(1.f); //generateRayOnHemisphere(l_hit.m_normal);
+        // uniform distribution: the rays are equally distributed
+        //glm::vec3 l_bounceDir = generateRayOnHemisphere(l_hit.m_normal);
+        //TODO implement the cookbook method 35 iirc
+        //return .5f * Color(l_hit.m_normal.x + 1.f, l_hit.m_normal.y + 1.f, l_hit.m_normal.z + 1.f, 1.f);
+        return .5f * rayColor({l_hit.m_intersection, l_bounceDir}, p_depth - 1);
+    }
 
     // barebones skybox
     glm::vec3 unitDir = glm::normalize(p_ray.getDirection());
@@ -104,4 +124,31 @@ void TraceableManager::setAspectRatio(float p_aspectRatio)
 void TraceableManager::setImageWidth(int p_imageWidth)
 {
     m_imageWidth = p_imageWidth;
+}
+
+void TraceableManager::setSamplesPerPixel(int p_samplesPerPixel)
+{
+
+}
+
+Ray TraceableManager::generateRayInPixel(int x, int y)
+{
+    glm::vec3 offset{getRayOffset() - .5f, getRayOffset() - .5f, 0.f};
+    glm::vec3 currentSample = m_pixelOrigin + ((float)x + offset.x) * m_deltaU + ((float)y + offset.y) * m_deltaV;
+
+    return{m_center, (currentSample - m_center)};
+}
+
+float TraceableManager::getRayOffset()
+{
+    return m_distribution(m_generator);
+}
+
+glm::vec3 TraceableManager::generateRayOnHemisphere(const glm::vec3& p_normal)
+{
+    glm::vec3 res = glm::sphericalRand(1.f);
+    if(glm::dot(res, p_normal) > 0.f)
+        return res;
+    else
+        return -res;
 }

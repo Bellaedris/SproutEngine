@@ -44,13 +44,21 @@ public:
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Parameters");
-        if (ImGui::Button("Raytrace"))
+        if(ImGui::CollapsingHeader("RayTrace settings", true))
         {
-            m_traceables.render();
+            ImGui::InputInt("Samples per pixel", &m_traceables.m_samplesPerPixel);
+            ImGui::InputInt("Max bounces per pixel", &m_traceables.m_maxBounces);
         }
-        if (ImGui::Button("Raster"))
+        if(ImGui::CollapsingHeader("Rendering", true))
         {
-            m_texture.release();
+            if (ImGui::Button("Raytrace"))
+            {
+                m_traceables.render();
+            }
+            if (ImGui::Button("Raster"))
+            {
+                m_texture.release();
+            }
         }
         ImGui::End();
 
