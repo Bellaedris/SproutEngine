@@ -2,7 +2,7 @@
 
 #include "stb_image_write.h"
 
-#include <sprout_engine/color.h>
+#include "color.h"
 
 #include <string>
 #include <vector>
@@ -33,15 +33,29 @@ public:
         return pixels.at(y * m_width + x);
     }
 
+    Color linearToGamma(const Color& p_pixel)
+    {
+        Color res{0.f, 0.f, 0.f, 1.f};
+        if(p_pixel.r > 0)
+            res.r = std::sqrtf(p_pixel.r);
+        if(p_pixel.g > 0)
+            res.g = std::sqrtf(p_pixel.g);
+        if(p_pixel.b > 0)
+            res.b = std::sqrtf(p_pixel.b);
+
+        return res;
+    }
+
     void write(const char* filename)
     {
         //colors must be converted from float to unsigned char to match the format
         std::vector<unsigned char> pixels_rgb;
         for (const Color& c : pixels)
         {
-            pixels_rgb.push_back(static_cast<unsigned char>(c.r * 255.f));
-            pixels_rgb.push_back(static_cast<unsigned char>(c.g * 255.f));
-            pixels_rgb.push_back(static_cast<unsigned char>(c.b * 255.f));
+            Color toWrite = linearToGamma(c);
+            pixels_rgb.push_back(static_cast<unsigned char>(toWrite.r * 255.f));
+            pixels_rgb.push_back(static_cast<unsigned char>(toWrite.g * 255.f));
+            pixels_rgb.push_back(static_cast<unsigned char>(toWrite.b * 255.f));
             pixels_rgb.push_back(static_cast<unsigned char>(c.a * 255.f));
         }
 
