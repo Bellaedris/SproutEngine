@@ -17,6 +17,15 @@ if(WIN32)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 endif(WIN32)
 
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 # find the required packages
@@ -70,7 +79,6 @@ endif(WIN32)
 set(PROJECTS
     tests
     framebuffers
-    terrain_generation
     raytracer
 )
 
@@ -175,3 +183,19 @@ foreach(PROJECT ${PROJECTS})
 endforeach(PROJECT)
 
 include_directories(${CMAKE_SOURCE_DIR}/includes)
+
+# Tests execuables
+enable_testing()
+
+file(GLOB_RECURSE TESTS "tests/*.cpp")
+
+add_executable(TestsSproutCore "tests/TestImage.cpp")
+
+target_link_libraries(
+        TestsSproutCore
+        GTest::gtest_main
+        ${LIBS}
+)
+
+include(GoogleTest)
+gtest_discover_tests(TestsSproutCore)
