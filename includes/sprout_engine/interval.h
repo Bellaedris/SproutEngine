@@ -18,7 +18,11 @@ public:
 
     Interval() : m_min(std::numeric_limits<T>::min()), m_max(std::numeric_limits<T>::max()) {}
 
-    Interval(T p_min, T p_max) : m_min(p_min), m_max(p_max) {}
+    Interval(T p_min, T p_max) : m_min(p_min), m_max(p_max)
+    {
+        if (p_min > p_max)
+            std::swap(p_min, p_max);
+    }
 
     /*!
      * \brief computes the size of the interval: max - min
