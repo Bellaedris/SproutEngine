@@ -123,26 +123,39 @@ public:
 		glGenerateMipmap(GL_TEXTURE_2D);
 	};
 
-	Texture(const int width, const int height, GLenum internal_format, GLenum format = GL_RGBA, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR) : type(type), path("empty")
+	Texture(const int width, const int height, GLenum internal_format, GLenum format = GL_RGBA, GLenum format_type = GL_UNSIGNED_BYTE, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR) : type(type), path("empty")
 	{
 		glGenTextures(1, &id);
 		glBindTexture(GL_TEXTURE_2D, id);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, format_type, NULL);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering_method);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_method);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, clamp_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, clamp_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, filtering_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, filtering_method);
         if (clamp_method == GL_CLAMP_TO_BORDER)
         {
             float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
         }
-		
 
 		glGenerateMipmap(GL_TEXTURE_2D);
 	};
+
+	Texture(int width, int height)
+	{
+		glGenTextures(1, &id);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, id);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA,
+		             GL_FLOAT, NULL);
+	}
 
 	inline unsigned int get_id() const { return id; };
 
