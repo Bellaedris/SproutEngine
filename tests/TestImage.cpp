@@ -86,7 +86,7 @@ TEST_F(TestImage, Circles) {
                     hit = true;
                 }
             if (!hit)
-                m_image(i, j) = Black();
+                m_image(i, j) = White();
         }
 
     m_image.write("tests/circles.png");
@@ -125,7 +125,7 @@ TEST_F(TestImage, Square) {
                     hit = true;
                 }
             if (!hit)
-                m_image(i, j) = Black();
+                m_image(i, j) = White();
         }
 
     m_image.write("tests/square.png");

@@ -27,7 +27,8 @@ protected:
 
         bool PointInSphere(int x, int y) const
         {
-            return (glm::distance(center, glm::vec2{ x, y }) < size);
+            glm::vec2 p(center - glm::vec2(x, y));
+            return (glm::dot(p, p) < size * size);
         }
     };
 
