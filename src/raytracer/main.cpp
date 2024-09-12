@@ -59,6 +59,8 @@ public:
         if(ImGui::CollapsingHeader("Rendering", true))
         {
             ImGui::Checkbox("Raytrace", &useRaytrace);
+            if(ImGui::Button("RayTrace CPU"))
+                m_traceables.render();
         }
         ImGui::End();
 
