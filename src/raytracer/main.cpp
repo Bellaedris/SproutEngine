@@ -1,3 +1,4 @@
+#include <sprout_engine/computeShader.h>
 #include <sprout_engine/SproutApp.h>
 
 #include <sprout_engine/model.h>
@@ -6,6 +7,7 @@
 #include "sprout_engine/ray_utils/traceableManager.h"
 #include <sprout_engine/ray_utils/Traceables/sphere.h>
 #include <sprout_engine/interval.h>
+#include <sprout_engine/ray_utils/RayTracingMaterials/raytracingMaterial.h>
 
 std::string resources_path = "../../resources/";
 
@@ -22,13 +24,18 @@ public:
         m_quad = Mesh::generatePlane();
         m_shader = Shader("texture.vs", "texture.fs");
         m_debugShader = Shader("default.vs", "default.fs");
+        m_compute = ComputeShader("raytrace.cs");
 
         //add traceable objects
         m_traceables.setAspectRatio((float)width() / (float)height());
         m_traceables.setImageWidth(width());
 
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, 0, -1), .5));
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100));
+        //m_sphereMaterial = std::make_shared<RaytracingMaterial>();
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, 0, -1), .5/*, m_sphereMaterial*/));
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100/*, m_sphereMaterial*/));
+
+        m_texture = Texture(width(), height());
+        glBindImageTexture(0, m_texture.get_id(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
         glViewport(0, 0, width(), height());
         glClearColor(.1f, .1f, .1f, 1.f);
@@ -51,24 +58,21 @@ public:
         }
         if(ImGui::CollapsingHeader("Rendering", true))
         {
-            if (ImGui::Button("Raytrace"))
-            {
-                m_traceables.render();
-            }
-            if (ImGui::Button("Raster"))
-            {
-                m_texture.release();
-            }
+            ImGui::Checkbox("Raytrace", &useRaytrace);
         }
         ImGui::End();
 
-        if (m_texture)
+        if (useRaytrace)
         {
             //render the image
-            m_texture->use();
-            m_shader.use();
+            m_compute.use();
+            m_compute.dispatch(width(), height(), 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-            m_quad.draw(m_shader);
+            m_texture.use();
+            m_shader.use();
+            m_shader.uniform_data("tex", 0);
+            m_quad.draw_strip(m_shader);
         }
         else
         {
@@ -76,8 +80,6 @@ public:
             m_debugShader.uniform_data("mvpMatrix", cam->projection() * cam->view());
 
             m_model.draw(m_debugShader);
-
-            glm::mat4 screenToWorld = glm::inverse(viewport() * cam->projection() * cam->view());
         }
 
         ImGui::Render();
@@ -100,9 +102,13 @@ protected:
     Mesh m_quad;
     Shader m_shader;
     Shader m_debugShader;
-    std::unique_ptr<Texture> m_texture;
+    ComputeShader m_compute;
+    Texture m_texture;
+    //std::shared_ptr<RaytracingMaterial> m_sphereMaterial;
 
     TraceableManager m_traceables;
+
+    bool useRaytrace{};
 };
 
 int main()
