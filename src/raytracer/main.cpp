@@ -51,10 +51,25 @@ public:
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Parameters");
+        if (ImGui::CollapsingHeader("performances")) {
+            ImGui::PlotLines("framerate", framerate, IM_ARRAYSIZE(framerate), values_offset, "framerate", 0.f, 240,
+                             ImVec2(0, 80.f));
+            int milli = (int) (gpu_last_frame / 1000000);
+            int micro = (int) ((gpu_last_frame / 1000) % 1000);
+            ImGui::Text(
+                    "cpu %03dms\ngpu %02dms % 03dus",
+                    cpu_last_frame,
+                    milli, micro
+            );
+        }
         if(ImGui::CollapsingHeader("RayTrace settings", true))
         {
             ImGui::InputInt("Samples per pixel", &m_traceables.m_samplesPerPixel);
             ImGui::InputInt("Max bounces per pixel", &m_traceables.m_maxBounces);
+            if (ImGui::Button("Reload compute"))
+            {
+                m_compute = ComputeShader("raytrace.cs");
+            }
         }
         if(ImGui::CollapsingHeader("Rendering", true))
         {
@@ -87,6 +102,10 @@ public:
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+        // update framerate
+        framerate[values_offset] = 1.f / delta_time;
+        values_offset = (values_offset + 1) % IM_ARRAYSIZE(framerate);
+
         return 0;
     }
 
@@ -110,7 +129,10 @@ protected:
 
     TraceableManager m_traceables;
 
-    bool useRaytrace{};
+    bool useRaytrace{true};
+
+    float framerate[90] = {};
+    int values_offset = 0;
 };
 
 int main()
