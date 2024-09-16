@@ -3,6 +3,7 @@
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) uniform image2D imageOutput;
+layout(rgba32f, binding = 1) uniform image2D sphericalCoords;
 
 // utilities
 float random (vec2 st) {
@@ -130,27 +131,58 @@ bool hitScene(in Scene scene, in Ray r, float hmin, float hmax, inout HitInfo hi
 
 vec3 rayColor(in Ray r, in Scene scene)
 {
-    vec3 color;
+    Ray tmp = r;
     HitInfo hit;
+    vec3 color;
+    int maxDepth = 0;
 
-    if (hitScene(scene, r, 0.0001, 1000000, hit))
+    while(maxDepth < 1)
     {
-        //color = vec3(hit.normal);
+        if (hitScene(scene, r, 0.0001, 1000000, hit))
+        {
+            vec3 randDir = hit.normal + imageLoad(sphericalCoords, gl_GlobalInvocationID.xy).rgb;
+            r = Ray(hit.intersection, randDir - hit.intersection);
+            float cosTheta = max(dot(hit.normal, -scene.lights[0].dir), 0);
 
-        float cosTheta = max(dot(hit.normal, -scene.lights[0].dir), 0);
+            color = scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[0].color * cosTheta;
+        }
+        else
+        {
+            vec3 unitDir = normalize(r.direction);
+            float y = (unitDir.y + 1.f) * .5f;
 
-        color = scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[0].color * cosTheta;
-    }
-    else
-    {
-        vec3 unitDir = normalize(r.direction);
-        float y = (unitDir.y + 1.f) * .5f;
-
-        color = mix(vec3(1.f, 1.f, 1.f), vec3(.5f, .7f, 1.f), y);
+            color = mix(vec3(1.f, 1.f, 1.f), vec3(.5f, .7f, 1.f), y);
+            return color;
+        }
+        maxDepth++;
     }
 
     return color;
 }
+
+// vec3 rayColor(in Ray r, in Scene scene)
+//{
+//    vec3 color;
+//    HitInfo hit;
+//
+//    if (hitScene(scene, r, 0.0001, 1000000, hit))
+//    {
+//        //color = vec3(hit.normal);
+//
+//        float cosTheta = max(dot(hit.normal, -scene.lights[0].dir), 0);
+//
+//        color = scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[0].color * cosTheta;
+//    }
+//    else
+//    {
+//        vec3 unitDir = normalize(r.direction);
+//        float y = (unitDir.y + 1.f) * .5f;
+//
+//        color = mix(vec3(1.f, 1.f, 1.f), vec3(.5f, .7f, 1.f), y);
+//    }
+//
+//    return color;
+//}
 
 void main()
 {
@@ -177,7 +209,7 @@ void main()
     scene.spheres[0] = s1;
     scene.spheres[1] = s2;
 
-    DirectionalLight light = DirectionalLight(normalize(vec3(1, -1, -.5)), vec3(1, 1, 1));
+    DirectionalLight light = DirectionalLight(normalize(vec3(1, -1, -1)), vec3(1, 1, 1));
     scene.lights[0] = light;
 
     scene.materials[0] = m1;
@@ -219,4 +251,5 @@ void main()
     //    val.y = float(texelCoord.y) / gl_NumWorkGroups.y;
 
     imageStore(imageOutput, current, finalColor);
+    //imageStore(imageOutput, current, imageLoad(sphericalCoords, current));
 }
