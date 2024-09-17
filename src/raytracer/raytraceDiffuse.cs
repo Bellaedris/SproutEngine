@@ -149,8 +149,8 @@ vec3 rayColor(in Ray r, in Scene scene, float u, float v)
 
             vec3 randDir = hit.normal + imageLoad(sphericalCoords, offset).rgb;
             if(dot(randDir, hit.normal) < 0.f)
-            return -randDir;
-            r = Ray(hit.intersection, randDir - hit.intersection);
+                return -randDir;
+            r = Ray(hit.intersection + hit.normal * 0.0001, randDir - hit.intersection);
             float cosTheta = max(dot(hit.normal, -scene.lights[0].dir), 0);
 
             modifier++;

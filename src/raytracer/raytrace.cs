@@ -131,7 +131,7 @@ bool hitScene(in Scene scene, in Ray r, float hmin, float hmax, inout HitInfo hi
 
 vec3 rayColor(in Ray r, in Scene scene)
 {
-    vec3 color;
+    vec3 color = vec3(0);
     HitInfo hit;
 
     if (hitScene(scene, r, 0.0001, 1000000, hit))
@@ -139,9 +139,15 @@ vec3 rayColor(in Ray r, in Scene scene)
         //color = vec3(hit.normal);
         for(int i = 0; i < LIGHT_NUMBER; i++)
         {
-            float cosTheta = max(dot(hit.normal, -scene.lights[i].dir), 0);
+            //bounce a ray towards the light to check shadows
+            Ray visibility = Ray(hit.intersection + hit.normal * 0.0001, -scene.lights[i].dir - hit.intersection);
+            HitInfo hitVisibility;
+            if (!hitScene(scene, visibility, 0.0001, 1000000, hitVisibility))
+            {
+                float cosTheta = max(dot(hit.normal, -scene.lights[i].dir), 0);
 
-            color += scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[i].color * cosTheta;
+                color += scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[i].color * cosTheta;
+            }
         }
     }
     else
@@ -174,16 +180,16 @@ void main()
     m1.diffuse = vec3(.9, .9, .9);
 
     Material m2;
-    m2.ambiant = vec3(.0, .05, .0);
-    m2.diffuse = vec3(.9, .4, .9);
+    m2.ambiant = vec3(.0, 0.05, .0);
+    m2.diffuse = vec3(.9, .9, .9);
 
     scene.spheres[0] = s1;
     scene.spheres[1] = s2;
 
-    DirectionalLight light = DirectionalLight(normalize(vec3(1, -1, -1)), vec3(.3, 0, 0));
+    DirectionalLight light = DirectionalLight(normalize(vec3(1, -1, -1)), vec3(.9, 0, 0));
     scene.lights[0] = light;
 
-    DirectionalLight light2 = DirectionalLight(normalize(vec3(-1, -1, -1)), vec3(0, 0, 0));
+    DirectionalLight light2 = DirectionalLight(normalize(vec3(-1, -1, -1)), vec3(0, 0, .9));
     scene.lights[1] = light2;
 
     scene.materials[0] = m1;
