@@ -101,7 +101,7 @@ struct DirectionalLight
     vec3 color;
 };
 
-#define LIGHT_NUMBER 2
+#define LIGHT_NUMBER 1
 #define MATERIAL_NUMBER 2
 
 struct Scene
@@ -129,31 +129,69 @@ bool hitScene(in Scene scene, in Ray r, float hmin, float hmax, inout HitInfo hi
     return hasHit;
 }
 
-vec3 rayColor(in Ray r, in Scene scene)
+vec3 rayColor(in Ray r, in Scene scene, float u, float v)
 {
-    vec3 color;
+    Ray tmp = r;
     HitInfo hit;
+    vec3 color = vec3(0);
+    int depth = 0;
+    float modifier = 1.f;
 
-    if (hitScene(scene, r, 0.0001, 1000000, hit))
+    while(depth < 10)
     {
-        //color = vec3(hit.normal);
-        for(int i = 0; i < LIGHT_NUMBER; i++)
+        if (hitScene(scene, r, 0.0001, 1000000, hit))
         {
-            float cosTheta = max(dot(hit.normal, -scene.lights[i].dir), 0);
+            // Generate random offset using the depth and current coordinates for randomness
+            float offsetX = random(vec2(u + depth * 10.0, v * 1000.0 + depth));
+            float offsetY = random(vec2(u * 1000.0 + depth * 10.0, v + depth * 100.0));
+            ivec2 offset = ivec2(gl_GlobalInvocationID.xy) + ivec2(offsetX * 100.0, offsetY * 100.0);
+            offset = clamp(offset, ivec2(0), ivec2(imageSize(sphericalCoords)) - ivec2(1));
 
-            color += scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[i].color * cosTheta;
+            vec3 randDir = hit.normal + imageLoad(sphericalCoords, offset).rgb;
+            if(dot(randDir, hit.normal) < 0.f)
+            return -randDir;
+            r = Ray(hit.intersection, randDir - hit.intersection);
+            float cosTheta = max(dot(hit.normal, -scene.lights[0].dir), 0);
+
+            modifier++;
         }
-    }
-    else
-    {
-        vec3 unitDir = normalize(r.direction);
-        float y = (unitDir.y + 1.f) * .5f;
+        else
+        {
+            vec3 unitDir = normalize(r.direction);
+            float y = (unitDir.y + 1.f) * .5f;
 
-        color = mix(vec3(1.f, 1.f, 1.f), vec3(.5f, .7f, 1.f), y);
+            color = mix(vec3(1.f, 1.f, 1.f), vec3(.5f, .7f, 1.f), y);
+            return pow(2, -modifier) * color;
+        }
+        depth++;
     }
 
     return color;
 }
+
+// vec3 rayColor(in Ray r, in Scene scene)
+//{
+//    vec3 color;
+//    HitInfo hit;
+//
+//    if (hitScene(scene, r, 0.0001, 1000000, hit))
+//    {
+//        //color = vec3(hit.normal);
+//
+//        float cosTheta = max(dot(hit.normal, -scene.lights[0].dir), 0);
+//
+//        color = scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[0].color * cosTheta;
+//    }
+//    else
+//    {
+//        vec3 unitDir = normalize(r.direction);
+//        float y = (unitDir.y + 1.f) * .5f;
+//
+//        color = mix(vec3(1.f, 1.f, 1.f), vec3(.5f, .7f, 1.f), y);
+//    }
+//
+//    return color;
+//}
 
 void main()
 {
@@ -180,11 +218,8 @@ void main()
     scene.spheres[0] = s1;
     scene.spheres[1] = s2;
 
-    DirectionalLight light = DirectionalLight(normalize(vec3(1, -1, -1)), vec3(.3, 0, 0));
+    DirectionalLight light = DirectionalLight(normalize(vec3(1, -1, -1)), vec3(1, 1, 1));
     scene.lights[0] = light;
-
-    DirectionalLight light2 = DirectionalLight(normalize(vec3(-1, -1, -1)), vec3(0, 0, 0));
-    scene.lights[1] = light2;
 
     scene.materials[0] = m1;
     scene.materials[1] = m2;
@@ -212,7 +247,7 @@ void main()
         float v = float(current.y + offsety) / float(imageDim.y);
         Ray r = Ray(center, viewportUpperLeft + u * horizontal + v * vertical - center);
 
-        color += rayColor(r, scene);
+        color += rayColor(r, scene, u, v);
     }
     color /= samples;
 

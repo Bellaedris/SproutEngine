@@ -11,10 +11,22 @@
 
 std::string resources_path = "../../resources/";
 
+
 class Raytracer : public SproutApp
 {
 public:
     Raytracer() : SproutApp(1366, 768, 4, 6) {}
+
+    [[nodiscard]] std::vector<glm::vec4> generateDirections() const
+    {
+        std::vector<glm::vec4> directions(width() * height());
+        for(int j = 0; j < height(); j++)
+            for(int i = 0; i < width(); i++)
+            {
+                directions[width() * j + i] = TraceableManager::generateRayOnHemisphere();
+            }
+        return directions;
+    }
 
     int init() override
     {
@@ -35,13 +47,8 @@ public:
         m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100/*, m_sphereMaterial*/));
 
         // generate a texture containing points on the edge of a sphere
-        std::vector<glm::vec4> directions(width() * height());
-        for(int j = 0; j < height(); j++)
-            for(int i = 0; i < width(); i++)
-            {
-                directions[width() * j + i] = TraceableManager::generateRayOnHemisphere();
-            }
-        m_sphericalCoordsTexture = Texture(width(), height(), directions);
+
+        m_sphericalCoordsTexture = Texture(width(), height(), generateDirections());
         glBindImageTexture(1, m_sphericalCoordsTexture.get_id(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
         m_texture = Texture(width(), height());
@@ -78,6 +85,8 @@ public:
             ImGui::InputInt("Max bounces per pixel", &m_traceables.m_maxBounces);
             if (ImGui::Button("Reload compute"))
             {
+                m_sphericalCoordsTexture = Texture(width(), height(), generateDirections());
+                glBindImageTexture(1, m_sphericalCoordsTexture.get_id(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
                 m_compute = ComputeShader("raytrace.cs");
             }
         }
