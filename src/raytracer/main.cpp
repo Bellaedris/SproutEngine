@@ -6,8 +6,8 @@
 #include <sprout_engine/line.h>
 #include "sprout_engine/ray_utils/traceableManager.h"
 #include <sprout_engine/ray_utils/Traceables/sphere.h>
-#include <sprout_engine/interval.h>
-#include <sprout_engine/ray_utils/RayTracingMaterials/raytracingMaterial.h>
+#include <sprout_engine/ray_utils/RayTracingMaterials/lambertian.h>
+#include <sprout_engine/ray_utils/RayTracingMaterials/metallic.h>
 
 std::string resources_path = "../../resources/";
 
@@ -42,9 +42,15 @@ public:
         m_traceables.setAspectRatio((float)width() / (float)height());
         m_traceables.setImageWidth(width());
 
-        //m_sphereMaterial = std::make_shared<RaytracingMaterial>();
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, 0, -1), .5/*, m_sphereMaterial*/));
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100/*, m_sphereMaterial*/));
+        m_groundMaterial = std::make_shared<Lambertian>(Color(.8f, .8f, .0f, 1.f));
+        m_centerMaterial = std::make_shared<Lambertian>(Color(.1f, .2f, .5f, 1.f));
+        m_leftMaterial = std::make_shared<Metallic>(Color(.8f, .8f, .8f, 1.f));
+        m_rightMaterial = std::make_shared<Metallic>(Color(.8f, .6f, .2f, 1.f));
+
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, 0, -1.2), .5, m_centerMaterial));
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100, m_groundMaterial));
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(-1, 0, -1), .5, m_leftMaterial));
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(1, 0, -1), .5, m_rightMaterial));
 
         // generate a texture containing points on the edge of a sphere
 
@@ -147,7 +153,12 @@ protected:
     ComputeShader m_compute;
     Texture m_texture;
     Texture m_sphericalCoordsTexture;
-    //std::shared_ptr<RaytracingMaterial> m_sphereMaterial;
+
+    // materials
+    std::shared_ptr<Lambertian> m_groundMaterial;
+    std::shared_ptr<Lambertian> m_centerMaterial;
+    std::shared_ptr<Metallic> m_leftMaterial;
+    std::shared_ptr<Metallic> m_rightMaterial;
 
     TraceableManager m_traceables;
 

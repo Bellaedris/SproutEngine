@@ -10,6 +10,8 @@
 
 #include <glm/gtc/random.hpp>
 
+#include "RayTracingMaterials/raytracingMaterial.h"
+
 TraceableManager::TraceableManager(std::vector<std::shared_ptr<Traceable>> p_traceables)
      : m_traceables(std::move(p_traceables))
      , m_distribution(0.f, 1.f)
@@ -45,6 +47,11 @@ bool TraceableManager::hit(const Ray &p_r, Interval<float> p_t, HitInfo &p_hit) 
 
     p_hit = currentHit;
     return l_hasHit;
+}
+
+glm::vec4 TraceableManager::generateRayOnHemisphere()
+{
+    return {glm::sphericalRand(1.f), 1.f};
 }
 
 void TraceableManager::render()
@@ -102,12 +109,17 @@ Color TraceableManager::rayColor(const Ray &p_ray, int p_depth)
     {
         // bounces the ray randomly
         // this is lambertian non-uniform, get more rays in the normal direction by just adding a random vector to the norm
-        glm::vec3 l_bounceDir = l_hit.m_normal + glm::sphericalRand(1.f); //generateRayOnHemisphere(l_hit.m_normal);
+        Ray scattered;
+        Color attenuation;
+        if (l_hit.m_mat->scatter(p_ray, l_hit, attenuation, scattered))
+            return attenuation * rayColor(scattered, p_depth - 1);
+        //glm::vec3 l_bounceDir = l_hit.m_normal + glm::sphericalRand(1.f); //generateRayOnHemisphere(l_hit.m_normal);
         // uniform distribution: the rays are equally distributed
         //glm::vec3 l_bounceDir = generateRayOnHemisphere(l_hit.m_normal);
         //TODO implement the cookbook method 35 iirc
         //return .5f * Color(l_hit.m_normal.x + 1.f, l_hit.m_normal.y + 1.f, l_hit.m_normal.z + 1.f, 1.f);
-        return .5f * rayColor({l_hit.m_intersection, l_bounceDir}, p_depth - 1);
+        //return .5f * rayColor({l_hit.m_intersection, l_bounceDir}, p_depth - 1);
+        return Black();
     }
 
     // barebones skybox
