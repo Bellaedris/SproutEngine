@@ -14,6 +14,5 @@ class HitInfo;
 class RaytracingMaterial
 {
 public:
-    ~RaytracingMaterial() = default;
     virtual bool scatter(const Ray& p_rayIn, const HitInfo& p_hit, Color& p_color, Ray& p_rayScattered) const = 0;
 };

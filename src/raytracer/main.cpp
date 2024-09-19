@@ -44,8 +44,8 @@ public:
 
         m_groundMaterial = std::make_shared<Lambertian>(Color(.8f, .8f, .0f, 1.f));
         m_centerMaterial = std::make_shared<Lambertian>(Color(.1f, .2f, .5f, 1.f));
-        m_leftMaterial = std::make_shared<Metallic>(Color(.8f, .8f, .8f, 1.f));
-        m_rightMaterial = std::make_shared<Metallic>(Color(.8f, .6f, .2f, 1.f));
+        m_leftMaterial = std::make_shared<Metallic>(Color(.8f, .8f, .8f, 1.f), .3);
+        m_rightMaterial = std::make_shared<Metallic>(Color(.8f, .6f, .2f, 1.f), 1.);
 
         m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, 0, -1.2), .5, m_centerMaterial));
         m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100, m_groundMaterial));
