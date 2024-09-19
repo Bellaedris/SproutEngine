@@ -4,6 +4,8 @@
 #include <sprout_engine/model.h>
 #include <sprout_engine/texture.h>
 #include <sprout_engine/line.h>
+#include <sprout_engine/ray_utils/RayTracingMaterials/dielectrics.h>
+
 #include "sprout_engine/ray_utils/traceableManager.h"
 #include <sprout_engine/ray_utils/Traceables/sphere.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/lambertian.h>
@@ -44,12 +46,15 @@ public:
 
         m_groundMaterial = std::make_shared<Lambertian>(Color(.8f, .8f, .0f, 1.f));
         m_centerMaterial = std::make_shared<Lambertian>(Color(.1f, .2f, .5f, 1.f));
-        m_leftMaterial = std::make_shared<Metallic>(Color(.8f, .8f, .8f, 1.f), .3);
+        m_outerLeftMaterial = std::make_shared<Dielectric>(1.5f);
+        // the sphere is made of air in a world of glass
+        m_innerLeftMaterial = std::make_shared<Dielectric>(1.f / 1.5f);
         m_rightMaterial = std::make_shared<Metallic>(Color(.8f, .6f, .2f, 1.f), 1.);
 
         m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, 0, -1.2), .5, m_centerMaterial));
         m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100, m_groundMaterial));
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(-1, 0, -1), .5, m_leftMaterial));
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(-1, 0, -1), .4, m_innerLeftMaterial));
+        m_traceables.add(std::make_unique<Sphere>(glm::vec3(-1, 0, -1), .5, m_outerLeftMaterial));
         m_traceables.add(std::make_unique<Sphere>(glm::vec3(1, 0, -1), .5, m_rightMaterial));
 
         // generate a texture containing points on the edge of a sphere
@@ -157,7 +162,8 @@ protected:
     // materials
     std::shared_ptr<Lambertian> m_groundMaterial;
     std::shared_ptr<Lambertian> m_centerMaterial;
-    std::shared_ptr<Metallic> m_leftMaterial;
+    std::shared_ptr<Dielectric> m_outerLeftMaterial;
+    std::shared_ptr<Dielectric> m_innerLeftMaterial;
     std::shared_ptr<Metallic> m_rightMaterial;
 
     TraceableManager m_traceables;
