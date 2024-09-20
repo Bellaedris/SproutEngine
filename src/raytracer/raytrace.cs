@@ -161,6 +161,13 @@ vec3 rayColor(in Ray r, in Scene scene)
     return color;
 }
 
+uniform float fov;
+uniform float aspectRatio;
+uniform vec3 cameraPos;
+uniform vec3 camDir;
+uniform vec3 camRight;
+uniform vec3 camUp;
+
 void main()
 {
     //scene definition
@@ -201,11 +208,18 @@ void main()
     int x = current.x;
     int y = current.y;
 
-    float focalLength = 1.f;
-    vec3 center = vec3(0., 0., 0.); // camera position
-    vec3 horizontal = vec3(3.55555555, 0., 0.);
-    vec3 vertical = vec3(0., 2., 0.);
-    vec3 viewportUpperLeft = center - vec3(0, 0, focalLength) - horizontal / 2.f - vertical / 2.f;
+    float focal = length(cameraPos - camDir);
+    float h = tan(radians(fov) / 2.f);
+    float height = 2.f * h * focal;
+    float width = height * aspectRatio;
+
+    vec3 viewportU = width * camRight;
+    vec3 viewportV = height * camUp;
+
+    vec3 deltaU = viewportU / float(imageDim.x);
+    vec3 deltaV = viewportV / float(imageDim.y);
+
+    vec3 viewportUpperLeft = cameraPos - focal * -camDir - viewportU / 2.f - viewportV / 2.f;
 
     int samples = 10;
     vec3 color = vec3(0);
@@ -214,9 +228,9 @@ void main()
         float offsetx = random(vec2(x + k, y + k));
         float offsety = random(vec2(offsetx + k, y + k));
 
-        float u = float(current.x + offsetx) / float(imageDim.x);
-        float v = float(current.y + offsety) / float(imageDim.y);
-        Ray r = Ray(center, viewportUpperLeft + u * horizontal + v * vertical - center);
+        float u = float(x + offsetx) / float(imageDim.x);
+        float v = float(y + offsety) / float(imageDim.y);
+        Ray r = Ray(cameraPos, viewportUpperLeft + (float(x) + offsetx) * deltaU + (float(y) + offsety) * deltaV - cameraPos);
 
         color += rayColor(r, scene);
     }
@@ -224,12 +238,5 @@ void main()
 
     vec4 finalColor = vec4(color, 1);
 
-    //    vec4 val = vec4(.0, .0, .0, 1.);
-    //    ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-    //
-    //    val.x = float(texelCoord.x) / gl_NumWorkGroups.x;
-    //    val.y = float(texelCoord.y) / gl_NumWorkGroups.y;
-
     imageStore(imageOutput, current, finalColor);
-    //imageStore(imageOutput, current, imageLoad(sphericalCoords, current));
 }

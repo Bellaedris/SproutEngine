@@ -78,6 +78,8 @@ public:
 
 	[[nodiscard]] inline glm::vec3 get_position() const { return pos; };
     [[nodiscard]] inline Frustum getFrustum() const { return m_frustum; };
+	[[nodiscard]] inline float getAspectRatio() const { return m_aspectRatio; };
+	[[nodiscard]] inline float getFov() const { return m_fov; };
 
     void setZNear(float mZNear);
     void setZFar(float mZFar);
@@ -168,5 +170,11 @@ public:
 		glBindVertexArray(vao);
 		glDrawArrays(GL_LINES, 0, 24);
 		glBindVertexArray(0);
-	};
+	}
+
+	[[nodiscard]] glm::vec3 getDir() const;
+
+	[[nodiscard]] glm::vec3 getUp() const;
+
+	[[nodiscard]] glm::vec3 getRight() const;;
 };

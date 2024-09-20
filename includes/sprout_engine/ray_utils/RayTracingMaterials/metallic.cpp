@@ -4,8 +4,6 @@
 
 #include "metallic.h"
 
-#include <glm/gtc/random.hpp>
-
 bool Metallic::scatter(const Ray& p_rayIn, const HitInfo& p_hit, Color& p_color, Ray& p_rayScattered) const
 {
     // the vector is normalized so the fuzzing is independant from the size of the sphere (ray directions aren't normalized)

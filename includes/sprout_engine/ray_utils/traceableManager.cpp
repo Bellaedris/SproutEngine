@@ -12,8 +12,9 @@
 
 #include "RayTracingMaterials/raytracingMaterial.h"
 
-TraceableManager::TraceableManager(std::vector<std::shared_ptr<Traceable>> p_traceables)
+TraceableManager::TraceableManager(std::vector<std::shared_ptr<Traceable>> p_traceables, Camera* p_camera)
      : m_traceables(std::move(p_traceables))
+     , m_camera(p_camera)
      , m_distribution(0.f, 1.f)
      , m_generator(std::random_device{}())
     {}
@@ -83,19 +84,18 @@ void TraceableManager::initialize()
 {
     m_imageHeight = int(m_imageWidth / m_aspectRatio);
 
-    // m_center = {0, 0, 0} //already done in init
+    float focalLength = glm::length(m_camera->get_position() - m_camera->getDir());
+    float h = std::tanf(glm::radians(m_camera->getFov()) / 2.f);
+    float viewportHeight = 2.f * h * focalLength;
+    float viewportWidth = viewportHeight * m_camera->getAspectRatio();
 
-    float focalLength = 1.f;
-    float viewportHeight = 2.0;
-    float viewportWidth = viewportHeight * (float(m_imageWidth) / m_imageHeight);
-
-    glm::vec3 viewportU(viewportWidth, 0, 0);
-    glm::vec3 viewportV(0, -viewportHeight, 0);
+    glm::vec3 viewportU = viewportWidth * m_camera->getRight();
+    glm::vec3 viewportV = -viewportHeight * m_camera->getUp();
 
     m_deltaU = viewportU / (float)m_imageWidth;
     m_deltaV = viewportV / (float)m_imageHeight;
 
-    glm::vec3 viewportUpperLeft = m_center - glm::vec3(0, 0, focalLength) - viewportU / 2.f - viewportV / 2.f;
+    glm::vec3 viewportUpperLeft = m_center - focalLength * -m_camera->getDir() - viewportU / 2.f - viewportV / 2.f;
     m_pixelOrigin = viewportUpperLeft - 0.5f * (m_deltaU + m_deltaV);
 }
 
@@ -105,7 +105,7 @@ Color TraceableManager::rayColor(const Ray &p_ray, int p_depth)
         return {0.f, 0.f, 0.f, 1.f};
 
     HitInfo l_hit;
-    if (hit(p_ray, {0.0001, std::numeric_limits<float>::max()}, l_hit))
+    if (hit(p_ray, {0.0001f, (std::numeric_limits<float>::max)()}, l_hit))
     {
         // bounces the ray randomly
         // this is lambertian non-uniform, get more rays in the normal direction by just adding a random vector to the norm
@@ -141,6 +141,11 @@ void TraceableManager::setImageWidth(int p_imageWidth)
 void TraceableManager::setSamplesPerPixel(int p_samplesPerPixel)
 {
 
+}
+
+void TraceableManager::setCamera(Camera* p_camera)
+{
+    m_camera = p_camera;
 }
 
 Ray TraceableManager::generateRayInPixel(int x, int y)

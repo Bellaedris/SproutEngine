@@ -4,12 +4,14 @@
 
 #pragma once
 
+#include <glm/gtc/random.hpp>
+
 #include "sprout_engine/ray_utils/ray.h"
 #include "sprout_engine/color.h"
 
 #include "sprout_engine/ray_utils/traceableManager.h"
 
-class HitInfo;
+struct HitInfo;
 
 class RaytracingMaterial
 {

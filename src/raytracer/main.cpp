@@ -34,13 +34,14 @@ public:
     {
         //read a mesh and create a camera
         m_model = Model(resources_path + "models/cornell-box.obj");
-        cam = new Camera({0, 2, 5}, {0, 1, 0}, 0, -90.f, 0.1f, 100.f, 70.f, (float)width() / (float)height());
+        cam = new Camera({0, 0, 0}, {0, 1, 0}, 0, -90.f, 0.1f, 100.f, 70.f, (float)width() / (float)height());
         m_quad = Mesh::generatePlane();
         m_shader = Shader("texture.vs", "texture.fs");
         m_debugShader = Shader("default.vs", "default.fs");
         m_compute = ComputeShader("raytrace.cs");
 
         //add traceable objects
+        m_traceables.setCamera(cam);
         m_traceables.setAspectRatio((float)width() / (float)height());
         m_traceables.setImageWidth(width());
 
@@ -112,15 +113,26 @@ public:
         if (useRaytrace)
         {
             //render the image
+            m_sphericalCoordsTexture.use(GL_TEXTURE1);
             m_compute.use();
+
+            // send texture datas
+            m_compute.uniform_data("imageOutput", 0);
+            m_compute.uniform_data("sphericalCoords", 1);
+            //send camera datas
+            m_compute.uniform_data("fov", cam->getFov());
+            m_compute.uniform_data("cameraPos", cam->get_position());
+            m_compute.uniform_data("aspectRatio", cam->getAspectRatio());
+            m_compute.uniform_data("camDir", cam->getDir());
+            m_compute.uniform_data("camRight", cam->getRight());
+            m_compute.uniform_data("camUp", cam->getUp());
+
             m_compute.dispatch(width(), height(), 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-            m_texture.use();
-            m_sphericalCoordsTexture.use(GL_TEXTURE1);
+            // blit to screen
             m_shader.use();
-            m_shader.uniform_data("imageOutput", 0);
-            m_shader.uniform_data("sphericalCoords", 1);
+            m_texture.use();
             m_quad.draw_strip(m_shader);
         }
         else

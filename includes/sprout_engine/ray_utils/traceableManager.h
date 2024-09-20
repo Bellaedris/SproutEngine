@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include <random>
+#include <sprout_engine/camera.h>
 
 #include "sprout_engine/ray_utils/Traceables/traceable.h"
 #include "sprout_engine/interval.h"
@@ -28,6 +29,9 @@ private:
     glm::vec3 m_pixelOrigin{};
     glm::vec3 m_deltaU{};
     glm::vec3 m_deltaV{};
+
+    //! Camera that gives informations about what the scene views
+    Camera* m_camera;
 
     bool m_initialized{};
 
@@ -64,7 +68,7 @@ public:
     int m_maxBounces{10};
 
     TraceableManager() = default;
-    explicit TraceableManager(std::vector<std::shared_ptr<Traceable>> p_traceables);
+    explicit TraceableManager(std::vector<std::shared_ptr<Traceable>> p_traceables, Camera* p_camera);
 
     //! \brief Sends rays to actually trace the scene
     void render();
@@ -89,7 +93,14 @@ public:
      */
     bool hit(const Ray& p_r, Interval<float> p_t, HitInfo& p_hit) const;
 
+    /*!
+    * \brief Generates a ray on the hemisphere centered on the normal
+    * \return a unit ray on the hemisphere
+    */
+    static glm::vec4 generateRayOnHemisphere();
+
     void setAspectRatio(float p_aspectRatio);
     void setImageWidth(int p_imageWidth);
     void setSamplesPerPixel(int p_samplesPerPixel);
+    void setCamera(Camera* p_camera);
 };

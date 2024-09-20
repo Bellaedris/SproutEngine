@@ -8,7 +8,8 @@
 
 #include "shader.h"
 
-class ComputeShader {
+class ComputeShader
+{
 protected:
     unsigned int id;
 
@@ -18,4 +19,44 @@ public:
 
     void use();
     void dispatch(unsigned int x, unsigned int y, unsigned int z);
+
+    GLint get_location(const std::string &name) const
+    {
+        return glGetUniformLocation(id, name.c_str());
+    }
+
+    void uniform_data(const std::string& name, const glm::mat4 mat) const
+    {
+        glUniformMatrix4fv(get_location(name), 1, false, glm::value_ptr(mat));
+    }
+
+    void uniform_data(const std::string& name, const float x, const float y, const float z, const float w) const
+    {
+        glUniform4f(get_location(name), x, y, z, w);
+    }
+
+    void uniform_data(const std::string& name, const glm::vec4& data) const
+    {
+        glUniform4f(get_location(name), data.x, data.y, data.z, data.w);
+    }
+
+    void uniform_data(const std::string& name, const glm::vec3& data) const
+    {
+        glUniform3f(get_location(name), data.x, data.y, data.z);
+    }
+
+    void uniform_data(const std::string &name, const float x, const float y, const float z) const
+    {
+        glUniform3f(get_location(name), x, y, z);
+    }
+
+    void uniform_data(const std::string& name, const float x) const
+    {
+        glUniform1f(get_location(name), x);
+    }
+
+    void uniform_data(const std::string& name, const int x) const
+    {
+        glUniform1i(get_location(name), x);
+    }
 };

@@ -150,6 +150,21 @@ void Camera::process_mouse_movement(float xoffset, float yoffset) {
     update_dir();
 }
 
+glm::vec3 Camera::getDir() const
+{
+    return dir;
+}
+
+glm::vec3 Camera::getUp() const
+{
+    return up;
+}
+
+glm::vec3 Camera::getRight() const
+{
+    return right;
+}
+
 void Camera::drawInspector() {
     if(ImGui::TreeNode("Camera"))
     {

@@ -5,7 +5,6 @@
 #include "lambertian.h"
 
 #include <glm/gtc/epsilon.hpp>
-#include <glm/gtc/random.hpp>
 #include <sprout_engine/ray_utils/Traceables/traceable.h>
 
 bool Lambertian::scatter(const Ray& p_rayIn, const HitInfo& p_hit, Color& p_color, Ray& p_rayScattered) const
