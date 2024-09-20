@@ -1,13 +1,7 @@
-#include "mesh.h"
+#pragma once
 
-class GLUtils
+class Utils
 {
-    static Mesh GenerateCube()
-    {
-
-
-        Mesh l_mesh;
-
-        return l_mesh;
-    }
+public:
+    static float random01();
 };
