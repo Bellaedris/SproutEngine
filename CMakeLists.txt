@@ -7,6 +7,9 @@ set(CMAKE_CXX_STANDARD 17) # this does nothing for MSVC, use target_compile_opti
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+# fix for a weird bug that caused windows.h to expand "max" and "min" keywords into macros.
+add_definitions(-DNOMINMAX)
+
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
