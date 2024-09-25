@@ -4,12 +4,15 @@
 #include <sprout_engine/model.h>
 #include <sprout_engine/texture.h>
 #include <sprout_engine/line.h>
+#include <sprout_engine/utils.h>
+#include <sprout_engine/ray_utils/bvh.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/dielectrics.h>
 
 #include "sprout_engine/ray_utils/traceableManager.h"
 #include <sprout_engine/ray_utils/Traceables/sphere.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/lambertian.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/metallic.h>
+#include <sprout_engine/ray_utils/Traceables/box.h>
 
 std::string resources_path = "../../resources/";
 
@@ -52,11 +55,27 @@ public:
         m_innerLeftMaterial = std::make_shared<Dielectric>(1.f / 1.5f);
         m_rightMaterial = std::make_shared<Metallic>(Color(.8f, .6f, .2f, 1.f), 1.);
 
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, 0, -1.2), .5, m_centerMaterial));
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(0, -100.5, -1), 100, m_groundMaterial));
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(-1, 0, -1), .4, m_innerLeftMaterial));
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(-1, 0, -1), .5, m_outerLeftMaterial));
-        m_traceables.add(std::make_unique<Sphere>(glm::vec3(1, 0, -1), .5, m_rightMaterial));
+        std::vector<Traceable*> traceables;
+        traceables.push_back(new Box(glm::vec3(-.25, -.25, -1.45), glm::vec3(.25, .25, -0.95), m_centerMaterial)); // box centered at 0, 0, -1.2
+        //traceables.push_back(new Sphere(glm::vec3(0, -100.5, -1), 100, m_groundMaterial));
+        // traceables.push_back(new Sphere(glm::vec3(-1, 0, -1), .4, m_innerLeftMaterial));
+        // traceables.push_back(new Sphere(glm::vec3(-1, 0, -1), .5, m_outerLeftMaterial));
+        // traceables.push_back(new Sphere(glm::vec3(1, 0, -1), .5, m_rightMaterial));
+
+        for(int i = 0; i < 1000; i++)
+        {
+            traceables.push_back(new Sphere(glm::vec3(Utils::randomRange(0, 10) - 5.f, Utils::randomRange(0, 1), -Utils::randomRange(1, 10)), Utils::randomRange(.05, .2), m_groundMaterial));
+        }
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        auto world = new BVHNode(traceables, 0, traceables.size());
+
+        auto bvhEnd = std::chrono::high_resolution_clock::now();
+
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(bvhEnd - start).count() << "ms" << std::endl;
+
+        m_traceables.add(world);
 
         // generate a texture containing points on the edge of a sphere
 
@@ -106,7 +125,13 @@ public:
         {
             ImGui::Checkbox("Raytrace", &useRaytrace);
             if(ImGui::Button("RayTrace CPU"))
+            {
+                auto start = std::chrono::high_resolution_clock::now();
                 m_traceables.render();
+                auto renderEnd = std::chrono::high_resolution_clock::now();
+
+                std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(renderEnd - start).count() << "ms" << std::endl;
+            }
         }
         ImGui::End();
 

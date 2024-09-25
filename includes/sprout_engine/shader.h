@@ -1,6 +1,5 @@
 #pragma once
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <string>
 
 #include <glm/glm.hpp>
@@ -22,6 +21,8 @@ inline std::string* read_file(const char* filename)
 
 		return new std::string(s.str());
 	}
+
+	return nullptr;
 }
 
 class Shader
@@ -122,6 +123,11 @@ public:
     {
         glUniform4f(get_location(name), data.x, data.y, data.z, data.w);
     }
+
+	void uniform_data(const std::string& name, const glm::vec3& data) const
+	{
+		glUniform3f(get_location(name), data.x, data.y, data.z);
+	}
 
 	void uniform_data(const std::string &name, const float x, const float y, const float z) const
 	{
