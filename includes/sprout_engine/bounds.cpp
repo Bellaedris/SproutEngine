@@ -61,3 +61,151 @@ AABB AABB::transform(const Transform &t) const {
 
     return AABB(globalCenter, newIi, newIj, newIk);
 }
+
+BoundingBox::BoundingBox(const BoundingBox& p_lhs, const BoundingBox& p_rhs)
+{
+    m_pmin = glm::min(p_lhs.m_pmin, p_rhs.m_pmin);
+    m_pmax = glm::max(p_lhs.m_pmax, p_rhs.m_pmax);
+}
+
+glm::vec3 BoundingBox::getCenter() const
+{
+    return (m_pmin + m_pmax) * 0.5f;
+}
+
+BoundingBox BoundingBox::empty()
+{
+    return {
+        {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()},
+        {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()}
+    };
+}
+
+bool BoundingBox::hit(const Ray& r, Interval<float> p_t) const
+{
+    float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+    if (r.getInverseDir().x >= 0)
+    {
+        tmin = (m_pmin.x - r.getOrigin().x) * r.getInverseDir().x;
+        tmax = (m_pmax.x - r.getOrigin().x) * r.getInverseDir().x;
+    }
+    else
+    {
+        tmin = (m_pmax.x - r.getOrigin().x) * r.getInverseDir().x;
+        tmax = (m_pmin.x - r.getOrigin().x) * r.getInverseDir().x;
+    }
+
+    if (r.getInverseDir().y >= 0)
+    {
+        tymin = (m_pmin.y - r.getOrigin().y) * r.getInverseDir().y;
+        tymax = (m_pmax.y - r.getOrigin().y) * r.getInverseDir().y;
+    }
+    else
+    {
+        tymin = (m_pmax.y - r.getOrigin().y) * r.getInverseDir().y;
+        tymax = (m_pmin.y - r.getOrigin().y) * r.getInverseDir().y;
+    }
+
+    if (tmin > tymax || tymin > tmax)
+        return false;
+
+    tmin = std::max(tmin, tymin);
+    tmax = std::min(tmax, tymax);
+
+    if (r.getInverseDir().z >= 0)
+    {
+        tzmin = (m_pmin.z - r.getOrigin().z) * r.getInverseDir().z;
+        tzmax = (m_pmax.z - r.getOrigin().z) * r.getInverseDir().z;
+    }
+    else
+    {
+        tzmin = (m_pmax.z - r.getOrigin().z) * r.getInverseDir().z;
+        tzmax = (m_pmin.z - r.getOrigin().z) * r.getInverseDir().z;
+    }
+
+    // Check overlap between current interval and z-slab
+    if (tmin > tzmax || tzmin > tmax)
+        return false;
+
+    tmin = std::max(tmin, tzmin);
+    tmax = std::min(tmax, tzmax);
+
+    return tmin < 0 ? p_t.contains(tmax) : p_t.contains(tmin);
+}
+
+std::array<glm::vec3, 8> BoundingBox::getVertices() const
+{
+    std::array<glm::vec3, 8> vertices;
+    vertices[0] = { m_pmin.x, m_pmin.y, m_pmin.z };
+    vertices[1] = { m_pmax.x, m_pmin.y, m_pmin.z };
+    vertices[2] = { m_pmin.x, m_pmax.y, m_pmin.z };
+    vertices[3] = { m_pmax.x, m_pmax.y, m_pmin.z };
+    vertices[4] = { m_pmin.x, m_pmin.y, m_pmax.z };
+    vertices[5] = { m_pmax.x, m_pmin.y, m_pmax.z };
+    vertices[6] = { m_pmin.x, m_pmax.y, m_pmax.z };
+    vertices[7] = { m_pmax.x, m_pmax.y, m_pmax.z };
+    return vertices;
+}
+
+void BoundingBox::buildBuffer()
+{
+    // AABB buffers/vao
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &buffer);
+
+    glBindVertexArray(vao);
+
+    // buffer containing all vertices data
+    auto aabb_bounds = getVertices();
+    glm::vec3 bounds[24] =
+    {
+        //front face
+        aabb_bounds[0],
+        aabb_bounds[1],
+        aabb_bounds[1],
+        aabb_bounds[2],
+        aabb_bounds[2],
+        aabb_bounds[3],
+        aabb_bounds[3],
+        aabb_bounds[0],
+
+        //back face
+        aabb_bounds[4],
+        aabb_bounds[5],
+        aabb_bounds[5],
+        aabb_bounds[6],
+        aabb_bounds[6],
+        aabb_bounds[7],
+        aabb_bounds[7],
+        aabb_bounds[4],
+
+        // edges
+        aabb_bounds[0],
+        aabb_bounds[4],
+        aabb_bounds[1],
+        aabb_bounds[5],
+        aabb_bounds[2],
+        aabb_bounds[6],
+        aabb_bounds[3],
+        aabb_bounds[7],
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(bounds), &bounds, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+}
+
+void BoundingBox::draw(Shader& s)
+{
+    s.use();
+
+    // draw AABB
+    glBindVertexArray(vao);
+    glDrawArrays(GL_LINES, 0, 24);
+    glBindVertexArray(0);
+}

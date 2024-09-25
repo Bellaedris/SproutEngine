@@ -8,18 +8,18 @@ Mesh Mesh::generatePlane() {
 
     std::vector<glm::vec3> vertices =
             {
-                    {-1, -1, 0},
                     {-1, 1, 0},
-                    {1, -1, 0},
-                    {1, 1, 0}
+                    {-1, -1, 0},
+                    {1, 1, 0},
+                    {1, -1, 0}
             };
 
     std::vector<glm::vec2> texcoords =
             {
-                    {0.0f, 0.0f},
                     {0.0f, 1.0f},
-                    {1.0f, 0.0f},
+                    {0.0f, 0.0f},
                     {1.0f, 1.0f},
+                    {1.0f, 0.0f},
             };
 
     return {vertices, texcoords};

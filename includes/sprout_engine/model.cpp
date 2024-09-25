@@ -141,7 +141,7 @@ void Model::draw(Shader &s) {
 void Model::drawAABB(Shader &s, const mat3 &transform, const vec3 &translation) {
     for (Mesh& m : meshes)
     {
-        m.drawAABB(s, transform, translation);
+        //m.drawAABB(s, transform, translation);
     }
 }
 

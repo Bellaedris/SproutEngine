@@ -190,9 +190,9 @@ include_directories(${CMAKE_SOURCE_DIR}/includes)
 # Tests execuables
 enable_testing()
 
-file(GLOB_RECURSE TESTS "tests/*.cpp")
+file(GLOB_RECURSE TESTS "tests/Test*.cpp")
 
-add_executable(TestsSproutCore "tests/TestImage.cpp")
+add_executable(TestsSproutCore ${TESTS})
 
 target_link_libraries(
         TestsSproutCore

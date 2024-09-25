@@ -23,11 +23,7 @@ protected:
     Material m_material;
 
 	AABB aabb;
-	//TODO move to the AABB class
-	unsigned int aabb_buff;
-	unsigned int aabb_vao;
-	Shader aabb_shader;
-	
+
 	unsigned int buffer;
 	unsigned int index_buffer;
 	unsigned int vao;
@@ -64,53 +60,6 @@ public:
 
 		//init AABB
 		aabb = AABB(glm::vec3(in_aabb.mMin.x, in_aabb.mMin.y, in_aabb.mMin.z), glm::vec3(in_aabb.mMax.x, in_aabb.mMax.y, in_aabb.mMax.z));
-
-		// AABB buffers/vao
-		glGenVertexArrays(1, &aabb_vao);
-		glGenBuffers(1, &aabb_buff);
-
-		glBindVertexArray(aabb_vao);
-
-		// buffer containing all vertices data
-		auto aabb_bounds = aabb.getVertices();
-		glm::vec3 bounds[24] =
-		{
-			//front face
-			aabb_bounds[0],
-			aabb_bounds[1],
-			aabb_bounds[1],
-			aabb_bounds[2],
-			aabb_bounds[2],
-			aabb_bounds[3],
-			aabb_bounds[3],
-			aabb_bounds[0],
-
-			//back face
-			aabb_bounds[4],
-			aabb_bounds[5],
-			aabb_bounds[5],
-			aabb_bounds[6],
-			aabb_bounds[6],
-			aabb_bounds[7],
-			aabb_bounds[7],
-			aabb_bounds[4],
-
-			// edges
-			aabb_bounds[0],
-			aabb_bounds[4],
-			aabb_bounds[1],
-			aabb_bounds[5],
-			aabb_bounds[2],
-			aabb_bounds[6],
-			aabb_bounds[3],
-			aabb_bounds[7],
-		};
-
-		glBindBuffer(GL_ARRAY_BUFFER, aabb_buff);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(bounds), &bounds, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), 0);
-		glEnableVertexAttribArray(0);
 
 		glBindVertexArray(0);
 	};
@@ -291,17 +240,6 @@ public:
 			return;
 		else
 			draw(s);
-	};
-
-	//TODO: move to a draw specific to the AABB class...
-	void drawAABB(Shader& s, const glm::mat3& transform, const glm::vec3& translation)
-	{
-		s.use();
-
-		// draw AABB
-		glBindVertexArray(aabb_vao);
-		glDrawArrays(GL_LINES, 0, 24);
-		glBindVertexArray(0);
 	};
 
 	void draw_debug_frustum(Shader& s, const Frustum& frustum, const Transform& transform)

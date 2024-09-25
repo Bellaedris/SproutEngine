@@ -11,6 +11,7 @@ class Ray {
 protected:
     glm::vec3 m_origin{};
     glm::vec3 m_direction{};
+    glm::vec3 m_inverseDir{};
 
 public:
     Ray() = default;
@@ -18,6 +19,7 @@ public:
 
     [[nodiscard]] glm::vec3 getOrigin() const {return m_origin;}
     [[nodiscard]] glm::vec3 getDirection() const {return m_direction;}
+    [[nodiscard]] glm::vec3 getInverseDir() const {return m_inverseDir;}
 
     glm::vec3 at(float t) const;
 };

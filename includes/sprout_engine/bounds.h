@@ -3,6 +3,10 @@
 #include "transform.h"
 
 #include <vector>
+#include <array>
+
+#include "interval.h"
+#include "ray_utils/ray.h"
 
 class AABB
 {
@@ -22,4 +26,31 @@ public:
 	bool isOnFrustum(const Frustum& f, const Transform &t) const;
 
 	AABB transform(const Transform& t) const;
+};
+
+class BoundingBox
+{
+private:
+	unsigned int buffer;
+	unsigned int vao;
+
+public:
+	glm::vec3 m_pmin{};
+	glm::vec3 m_pmax{};
+
+    BoundingBox() = default;
+    BoundingBox(const glm::vec3& pmin, const glm::vec3& pmax)
+        : m_pmin(pmin), m_pmax(pmax) {}
+
+    BoundingBox(const BoundingBox& p_lhs, const BoundingBox& p_rhs);
+
+    glm::vec3 getCenter() const;
+
+    static BoundingBox empty();
+
+    bool hit(const Ray& r, Interval<float> p_t) const;
+
+	std::array<glm::vec3, 8> getVertices() const;
+	void buildBuffer();
+	void draw(Shader& s);
 };
