@@ -19,7 +19,7 @@
 class TraceableManager
 {
 private:
-    std::vector<std::shared_ptr<Traceable>> m_traceables;
+    std::vector<Traceable*> m_traceables;
 
     // rendering settings
     float m_aspectRatio{1.f};
@@ -32,6 +32,8 @@ private:
 
     //! Camera that gives informations about what the scene views
     Camera* m_camera;
+
+    BoundingBox m_boundingBox;
 
     bool m_initialized{};
 
@@ -64,11 +66,11 @@ private:
     float getRayOffset();
 public:
     // manageable settings
-    int m_samplesPerPixel{10};
-    int m_maxBounces{10};
+    int m_samplesPerPixel{1};
+    int m_maxBounces{5};
 
     TraceableManager() = default;
-    explicit TraceableManager(std::vector<std::shared_ptr<Traceable>> p_traceables, Camera* p_camera);
+    explicit TraceableManager(std::vector<Traceable*> p_traceables, Camera* p_camera);
 
     //! \brief Sends rays to actually trace the scene
     void render();
@@ -79,7 +81,7 @@ public:
      * \brief Add a Traceable to the scene
      * \param p_traceable a traceable object
      */
-    void add(std::shared_ptr<Traceable> p_traceable);
+    void add(Traceable* p_traceable);
 
     //! \brief clears the scene
     void clear();
@@ -103,4 +105,10 @@ public:
     void setImageWidth(int p_imageWidth);
     void setSamplesPerPixel(int p_samplesPerPixel);
     void setCamera(Camera* p_camera);
+
+    /**
+     * gets the traceables pointers
+     * @return A copy of the traceables
+     */
+    std::vector<Traceable*> getTraceables();
 };

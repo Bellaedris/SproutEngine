@@ -12,18 +12,18 @@
 
 #include "RayTracingMaterials/raytracingMaterial.h"
 
-TraceableManager::TraceableManager(std::vector<std::shared_ptr<Traceable>> p_traceables, Camera* p_camera)
+TraceableManager::TraceableManager(std::vector<Traceable*> p_traceables, Camera* p_camera)
      : m_traceables(std::move(p_traceables))
      , m_camera(p_camera)
+     , m_boundingBox(BoundingBox::empty())
      , m_distribution(0.f, 1.f)
      , m_generator(std::random_device{}())
-    {}
+{}
 
-
-
-void TraceableManager::add(std::shared_ptr<Traceable> p_traceable)
+void TraceableManager::add(Traceable* p_traceable)
 {
     m_traceables.push_back(p_traceable);
+    m_boundingBox = BoundingBox(m_boundingBox, p_traceable->getAABB());
 }
 
 void TraceableManager::clear()
@@ -146,6 +146,11 @@ void TraceableManager::setSamplesPerPixel(int p_samplesPerPixel)
 void TraceableManager::setCamera(Camera* p_camera)
 {
     m_camera = p_camera;
+}
+
+std::vector<Traceable*> TraceableManager::getTraceables()
+{
+    return m_traceables;
 }
 
 Ray TraceableManager::generateRayInPixel(int x, int y)

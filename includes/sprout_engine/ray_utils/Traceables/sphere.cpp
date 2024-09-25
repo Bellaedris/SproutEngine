@@ -8,7 +8,11 @@ Sphere::Sphere(const glm::vec3 &p_center, float p_radius, const std::shared_ptr<
     : m_center(p_center)
     , m_radius(std::fmax(0.f, p_radius))
     , m_material(p_material)
-    {}
+    , m_boundingBox(BoundingBox::empty())
+{
+    glm::vec3 radVec = {m_radius, m_radius, m_radius};
+    m_boundingBox = {m_center - radVec, m_center + radVec};
+}
 
 bool Sphere::hit(const Ray &r, Interval<float> p_t, HitInfo &hitInfo) const {
     glm::vec3 oc = m_center - r.getOrigin();
@@ -49,4 +53,14 @@ bool Sphere::hit(const Ray &r, Interval<float> p_t, HitInfo &hitInfo) const {
     }
 
     return true;
+}
+
+BoundingBox Sphere::getAABB() const
+{
+    return m_boundingBox;
+}
+
+glm::vec3 Sphere::getCentroid() const
+{
+    return m_center;
 }
