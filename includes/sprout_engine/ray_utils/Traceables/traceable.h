@@ -6,6 +6,8 @@
 #define SPROUTENGINE_TRACEABLE_H
 
 #include <memory>
+#include <sprout_engine/bounds.h>
+
 #include "sprout_engine/ray_utils/ray.h"
 #include "sprout_engine/interval.h"
 
@@ -28,6 +30,8 @@ struct HitInfo
 class Traceable {
 public:
     virtual bool hit(const Ray& r, Interval<float> p_t, HitInfo &hitInfo) const = 0;
+    virtual BoundingBox getAABB() const = 0;
+    virtual glm::vec3 getCentroid() const = 0;
 };
 
 
