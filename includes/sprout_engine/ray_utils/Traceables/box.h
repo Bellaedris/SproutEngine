@@ -17,8 +17,12 @@ public:
     BoundingBox getAABB() const override;
     glm::vec3 getCentroid() const override;
 
+    void drawAABB(Shader& s, int currentDepth, int maxDepth) override;
+
 protected:
     glm::vec3 m_pmin{}; //! min points of the bounding box
     glm::vec3 m_pmax{}; //! max point of the bounding box
     std::shared_ptr<RaytracingMaterial> m_material;
+
+    BoundingBox m_boundingBox{};
 };

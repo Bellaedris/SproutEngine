@@ -30,6 +30,9 @@ private:
     glm::vec3 m_deltaU{};
     glm::vec3 m_deltaV{};
 
+    int m_samplesPerPixel{1};
+    int m_maxBounces{5};
+
     //! Camera that gives informations about what the scene views
     Camera* m_camera;
 
@@ -65,15 +68,12 @@ private:
      */
     float getRayOffset();
 public:
-    // manageable settings
-    int m_samplesPerPixel{1};
-    int m_maxBounces{5};
-
     TraceableManager() = default;
     explicit TraceableManager(std::vector<Traceable*> p_traceables, Camera* p_camera);
 
     //! \brief Sends rays to actually trace the scene
     void render();
+    void drawBoundingBoxes(Shader& s, int maxDepth);
     //! \brief initializes all the parameters of the ray tracer. Always done before first draw.
     void initialize();
 
@@ -82,6 +82,12 @@ public:
      * \param p_traceable a traceable object
      */
     void add(Traceable* p_traceable);
+
+    /*!
+     * \brief Add an array of Traceables to the scene
+     * \param p_traceable an array of pointers to traceables
+     */
+    void add(const std::vector<Traceable*>& p_traceables);
 
     //! \brief clears the scene
     void clear();
@@ -104,6 +110,7 @@ public:
     void setAspectRatio(float p_aspectRatio);
     void setImageWidth(int p_imageWidth);
     void setSamplesPerPixel(int p_samplesPerPixel);
+    void setMaxBounces(int p_maxBounces);
     void setCamera(Camera* p_camera);
 
     /**

@@ -19,6 +19,8 @@ public:
     BoundingBox getAABB() const override;
     glm::vec3 getCentroid() const override;
 
+    void drawAABB(Shader& s, int currentDepth, int maxDepth) override;
+
 private:
     Traceable* m_left{};
     Traceable* m_right{};
@@ -27,8 +29,6 @@ private:
     unsigned int count{}; //! number of primitives
 
     BoundingBox m_aabb;
-
-    Box m_box;
 
     void sortOnAxis(std::vector<Traceable*>& p_traceables, size_t p_begin, size_t p_end, int axis);
 };

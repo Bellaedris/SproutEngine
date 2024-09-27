@@ -46,8 +46,6 @@ BVHNode::BVHNode(std::vector<Traceable*>& p_traceables, size_t p_first, size_t p
         m_left = new BVHNode(p_traceables, p_first, middle);
         m_right = new BVHNode(p_traceables, middle, p_end);
     }
-
-    m_box = Box(m_aabb.m_pmin, m_aabb.m_pmax, std::make_shared<Lambertian>(Color(1, 0, 0, 1)));
 }
 
 bool BVHNode::hit(const Ray& r, Interval<float> p_t, HitInfo& hitInfo) const
@@ -69,6 +67,17 @@ BoundingBox BVHNode::getAABB() const
 glm::vec3 BVHNode::getCentroid() const
 {
     return m_aabb.getCenter();
+}
+
+void BVHNode::drawAABB(Shader& s, int currentDepth, int maxDepth)
+{
+    m_aabb.draw(s);
+
+    if (currentDepth < maxDepth)
+    {
+        m_left->drawAABB(s, currentDepth + 1, maxDepth);
+        m_right->drawAABB(s, currentDepth + 1, maxDepth);
+    }
 }
 
 void BVHNode::sortOnAxis(std::vector<Traceable*>& p_traceables, size_t p_begin, size_t p_end, int axis)

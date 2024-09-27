@@ -41,12 +41,17 @@ public:
         m_quad = Mesh::generatePlane();
         m_shader = Shader("texture.vs", "texture.fs");
         m_debugShader = Shader("default.vs", "default.fs");
+        m_AABBDisplay = Shader("debug_lines.vs", "debug_lines.fs");
         m_compute = ComputeShader("raytrace.cs");
 
         //add traceable objects
         m_traceables.setCamera(cam);
         m_traceables.setAspectRatio((float)width() / (float)height());
         m_traceables.setImageWidth(width());
+
+        m_traceablesBVH.setCamera(cam);
+        m_traceablesBVH.setAspectRatio((float)width() / (float)height());
+        m_traceablesBVH.setImageWidth(width());
 
         m_groundMaterial = std::make_shared<Lambertian>(Color(.8f, .8f, .0f, 1.f));
         m_centerMaterial = std::make_shared<Lambertian>(Color(.1f, .2f, .5f, 1.f));
@@ -56,13 +61,14 @@ public:
         m_rightMaterial = std::make_shared<Metallic>(Color(.8f, .6f, .2f, 1.f), 1.);
 
         std::vector<Traceable*> traceables;
-        traceables.push_back(new Box(glm::vec3(-.25, -.25, -1.45), glm::vec3(.25, .25, -0.95), m_centerMaterial)); // box centered at 0, 0, -1.2
-        //traceables.push_back(new Sphere(glm::vec3(0, -100.5, -1), 100, m_groundMaterial));
-        // traceables.push_back(new Sphere(glm::vec3(-1, 0, -1), .4, m_innerLeftMaterial));
-        // traceables.push_back(new Sphere(glm::vec3(-1, 0, -1), .5, m_outerLeftMaterial));
-        // traceables.push_back(new Sphere(glm::vec3(1, 0, -1), .5, m_rightMaterial));
+        // traceables.push_back(new Box(glm::vec3(-.25, -.25, -1.45), glm::vec3(.25, .25, -0.95), m_centerMaterial)); // box centered at 0, 0, -1.2
+        //traceables.push_back(new Sphere(glm::vec3(0, 0, -1), .4, m_centerMaterial));
+        // traceables.push_back(new Sphere(glm::vec3(0, -100.5, -1), 100, m_groundMaterial));
+        //traceables.push_back(new Sphere(glm::vec3(-1, 0, -1), .4, m_innerLeftMaterial));
+        //traceables.push_back(new Sphere(glm::vec3(-1, 0, -1), .5, m_outerLeftMaterial));
+        //traceables.push_back(new Sphere(glm::vec3(1, 0, -1), .5, m_rightMaterial));
 
-        for(int i = 0; i < 1000; i++)
+        for(int i = 0; i < 100; i++)
         {
             traceables.push_back(new Sphere(glm::vec3(Utils::randomRange(0, 10) - 5.f, Utils::randomRange(0, 1), -Utils::randomRange(1, 10)), Utils::randomRange(.05, .2), m_groundMaterial));
         }
@@ -76,6 +82,7 @@ public:
         std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(bvhEnd - start).count() << "ms" << std::endl;
 
         m_traceables.add(world);
+        m_traceablesBVH.add(traceables);
 
         // generate a texture containing points on the edge of a sphere
 
@@ -112,8 +119,16 @@ public:
         }
         if(ImGui::CollapsingHeader("RayTrace settings", true))
         {
-            ImGui::InputInt("Samples per pixel", &m_traceables.m_samplesPerPixel);
-            ImGui::InputInt("Max bounces per pixel", &m_traceables.m_maxBounces);
+            if(ImGui::InputInt("Samples per pixel", &samplesPerPixel))
+            {
+                m_traceables.setSamplesPerPixel(samplesPerPixel);
+            };
+            if(ImGui::InputInt("Max bounces per pixel", &bouncesMaxPerRay))
+            {
+                m_traceables.setMaxBounces(bouncesMaxPerRay);
+            }
+            ImGui::SliderInt("Maximal BVH depth displayed", &BVHMaxDisplayDepth, 0, 30);
+            ImGui::Checkbox("Use BVH", &useBVH);
             if (ImGui::Button("Reload compute"))
             {
                 m_sphericalCoordsTexture = Texture(width(), height(), generateDirections());
@@ -127,7 +142,10 @@ public:
             if(ImGui::Button("RayTrace CPU"))
             {
                 auto start = std::chrono::high_resolution_clock::now();
-                m_traceables.render();
+                if (useBVH)
+                    m_traceables.render();
+                else
+                    m_traceablesBVH.render();
                 auto renderEnd = std::chrono::high_resolution_clock::now();
 
                 std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(renderEnd - start).count() << "ms" << std::endl;
@@ -162,10 +180,14 @@ public:
         }
         else
         {
-            m_debugShader.use();
-            m_debugShader.uniform_data("mvpMatrix", cam->projection() * cam->view());
+            //m_debugShader.use();
+           // m_debugShader.uniform_data("mvpMatrix", cam->projection() * cam->view());
 
-            m_model.draw(m_debugShader);
+            //m_model.draw(m_debugShader);
+
+            m_AABBDisplay.use();
+            m_AABBDisplay.uniform_data("mvpMatrix", cam->projection() * cam->view());
+            m_traceables.drawBoundingBoxes(m_AABBDisplay, BVHMaxDisplayDepth);
         }
 
         ImGui::Render();
@@ -192,6 +214,7 @@ protected:
     Mesh m_quad;
     Shader m_shader;
     Shader m_debugShader;
+    Shader m_AABBDisplay;
     ComputeShader m_compute;
     Texture m_texture;
     Texture m_sphericalCoordsTexture;
@@ -204,8 +227,13 @@ protected:
     std::shared_ptr<Metallic> m_rightMaterial;
 
     TraceableManager m_traceables;
+    TraceableManager m_traceablesBVH;
 
     bool useRaytrace{true};
+    bool useBVH{true};
+    int samplesPerPixel = 10;
+    int bouncesMaxPerRay = 10;
+    int BVHMaxDisplayDepth = 1;
 
     float framerate[90] = {};
     int values_offset = 0;

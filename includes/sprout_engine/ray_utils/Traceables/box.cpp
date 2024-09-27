@@ -8,7 +8,9 @@ Box::Box(const glm::vec3& p_pmin, const glm::vec3& p_pmax, const std::shared_ptr
     : m_pmin(p_pmin)
     , m_pmax(p_pmax)
     , m_material(p_mat)
-{}
+{
+    m_boundingBox = BoundingBox(p_pmin, p_pmax, glm::vec3(1, 0, 0));
+}
 
 bool Box::hit(const Ray& r, Interval<float> p_t, HitInfo& hitInfo) const
 {
@@ -98,10 +100,15 @@ bool Box::hit(const Ray& r, Interval<float> p_t, HitInfo& hitInfo) const
 
 BoundingBox Box::getAABB() const
 {
-    return { m_pmin, m_pmax };
+    return m_boundingBox;
 }
 
 glm::vec3 Box::getCentroid() const
 {
     return (m_pmin + m_pmax) / 2.f;
+}
+
+void Box::drawAABB(Shader& s, int currentDepth, int maxDepth)
+{
+    m_boundingBox.draw(s);
 }

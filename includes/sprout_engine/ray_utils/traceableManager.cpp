@@ -26,6 +26,12 @@ void TraceableManager::add(Traceable* p_traceable)
     m_boundingBox = BoundingBox(m_boundingBox, p_traceable->getAABB());
 }
 
+void TraceableManager::add(const std::vector<Traceable*>& p_traceables)
+{
+    for (const auto& traceable : p_traceables)
+        add(traceable);
+}
+
 void TraceableManager::clear()
 {
     m_traceables.clear();
@@ -78,6 +84,12 @@ void TraceableManager::render()
     }
 
     result.write("raytrace_result.png");
+}
+
+void TraceableManager::drawBoundingBoxes(Shader& s, int maxDepth)
+{
+    for(const auto& traceable : m_traceables)
+        traceable->drawAABB(s, 0, maxDepth);
 }
 
 void TraceableManager::initialize()
@@ -141,6 +153,11 @@ void TraceableManager::setImageWidth(int p_imageWidth)
 void TraceableManager::setSamplesPerPixel(int p_samplesPerPixel)
 {
 
+}
+
+void TraceableManager::setMaxBounces(int p_maxBounces)
+{
+    m_maxBounces = p_maxBounces;
 }
 
 void TraceableManager::setCamera(Camera* p_camera)

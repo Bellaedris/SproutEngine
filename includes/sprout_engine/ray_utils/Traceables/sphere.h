@@ -15,6 +15,8 @@ public:
     BoundingBox getAABB() const override;
     glm::vec3 getCentroid() const override;
 
+    void drawAABB(Shader& s, int currentDepth, int maxDepth) override;
+
 private:
     glm::vec3 m_center;
     float m_radius;

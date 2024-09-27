@@ -32,6 +32,8 @@ public:
     virtual bool hit(const Ray& r, Interval<float> p_t, HitInfo &hitInfo) const = 0;
     virtual BoundingBox getAABB() const = 0;
     virtual glm::vec3 getCentroid() const = 0;
+
+    virtual void drawAABB(Shader& s, int currentDepth, int maxDepth) = 0;
 };
 
 
