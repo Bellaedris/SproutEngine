@@ -4,6 +4,8 @@
 
 #include "bounds.h"
 
+#include <glm/gtc/random.hpp>
+
 std::vector <glm::vec3> AABB::getVertices() const {
     std::vector<glm::vec3> vertices(8);
     vertices[0] = { center.x - extents.x, center.y - extents.y, center.z - extents.z };
@@ -64,8 +66,19 @@ AABB AABB::transform(const Transform &t) const {
 
 BoundingBox::BoundingBox(const BoundingBox& p_lhs, const BoundingBox& p_rhs)
 {
-    m_pmin = glm::min(p_lhs.m_pmin, p_rhs.m_pmin);
-    m_pmax = glm::max(p_lhs.m_pmax, p_rhs.m_pmax);
+    m_pmin = glm::vec3(
+        std::min(p_lhs.m_pmin.x, p_rhs.m_pmin.x),
+        std::min(p_lhs.m_pmin.y, p_rhs.m_pmin.y),
+        std::min(p_lhs.m_pmin.z, p_rhs.m_pmin.z)
+        );
+
+    m_pmax = glm::vec3(
+        std::max(p_lhs.m_pmax.x, p_rhs.m_pmax.x),
+        std::max(p_lhs.m_pmax.y, p_rhs.m_pmax.y),
+        std::max(p_lhs.m_pmax.z, p_rhs.m_pmax.z)
+        );
+
+    color = {glm::linearRand(0.f, 1.f), glm::linearRand(0.f, 1.f), glm::linearRand(0.f, 1.f)};
 }
 
 glm::vec3 BoundingBox::getCenter() const
@@ -77,7 +90,8 @@ BoundingBox BoundingBox::empty()
 {
     return {
         {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()},
-        {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()}
+        {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()},
+        {glm::linearRand(0.f, 1.f), glm::linearRand(0.f, 1.f), glm::linearRand(0.f, 1.f)}
     };
 }
 
@@ -160,35 +174,23 @@ void BoundingBox::buildBuffer()
     auto aabb_bounds = getVertices();
     glm::vec3 bounds[24] =
     {
-        //front face
-        aabb_bounds[0],
-        aabb_bounds[1],
-        aabb_bounds[1],
-        aabb_bounds[2],
-        aabb_bounds[2],
-        aabb_bounds[3],
-        aabb_bounds[3],
-        aabb_bounds[0],
+        // front face (connect the 4 front corners in a loop)
+        aabb_bounds[0], aabb_bounds[1],
+        aabb_bounds[1], aabb_bounds[3],
+        aabb_bounds[3], aabb_bounds[2],
+        aabb_bounds[2], aabb_bounds[0],
 
-        //back face
-        aabb_bounds[4],
-        aabb_bounds[5],
-        aabb_bounds[5],
-        aabb_bounds[6],
-        aabb_bounds[6],
-        aabb_bounds[7],
-        aabb_bounds[7],
-        aabb_bounds[4],
+        // back face (connect the 4 back corners in a loop)
+        aabb_bounds[4], aabb_bounds[5],
+        aabb_bounds[5], aabb_bounds[7],
+        aabb_bounds[7], aabb_bounds[6],
+        aabb_bounds[6], aabb_bounds[4],
 
-        // edges
-        aabb_bounds[0],
-        aabb_bounds[4],
-        aabb_bounds[1],
-        aabb_bounds[5],
-        aabb_bounds[2],
-        aabb_bounds[6],
-        aabb_bounds[3],
-        aabb_bounds[7],
+        // edges between front and back face
+        aabb_bounds[0], aabb_bounds[4],
+        aabb_bounds[1], aabb_bounds[5],
+        aabb_bounds[3], aabb_bounds[7],
+        aabb_bounds[2], aabb_bounds[6],
     };
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -198,11 +200,18 @@ void BoundingBox::buildBuffer()
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);
+
+    m_isInitialized = true;
 }
 
 void BoundingBox::draw(Shader& s)
 {
+    if (!m_isInitialized)
+        buildBuffer();
+
     s.use();
+
+    s.uniform_data("color", color);
 
     // draw AABB
     glBindVertexArray(vao);

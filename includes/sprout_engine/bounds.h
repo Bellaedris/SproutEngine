@@ -33,14 +33,16 @@ class BoundingBox
 private:
 	unsigned int buffer;
 	unsigned int vao;
+	glm::vec3 color;
+	bool m_isInitialized{};
 
 public:
 	glm::vec3 m_pmin{};
 	glm::vec3 m_pmax{};
 
     BoundingBox() = default;
-    BoundingBox(const glm::vec3& pmin, const glm::vec3& pmax)
-        : m_pmin(pmin), m_pmax(pmax) {}
+    BoundingBox(const glm::vec3& pmin, const glm::vec3& pmax, const glm::vec3& color)
+        : m_pmin(pmin), m_pmax(pmax), color(color) {}
 
     BoundingBox(const BoundingBox& p_lhs, const BoundingBox& p_rhs);
 
