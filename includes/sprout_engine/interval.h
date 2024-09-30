@@ -16,7 +16,7 @@ public:
     //! enforce arithmetic type. Could be improved with cpp 23 concepts, but stb image is stuck in 17 for now
     static_assert(std::is_arithmetic<T>::value, "Template parameter T must be of arithmetic type");
 
-    Interval() : m_min(std::numeric_limits<T>::min()), m_max(std::numeric_limits<T>::max()) {}
+    Interval() : m_min(std::numeric_limits<T>::lowest()), m_max(std::numeric_limits<T>::max()) {}
 
     Interval(T p_min, T p_max) : m_min(p_min), m_max(p_max) {}
 
