@@ -41,7 +41,7 @@ public:
 	glm::vec3 m_pmax{};
 
     BoundingBox() = default;
-    BoundingBox(const glm::vec3& pmin, const glm::vec3& pmax, const glm::vec3& color)
+    BoundingBox(const glm::vec3& pmin, const glm::vec3& pmax, const glm::vec3& color = glm::vec3(1.f, 1.f, 1.f))
         : m_pmin(pmin), m_pmax(pmax), color(color) {}
 
     BoundingBox(const BoundingBox& p_lhs, const BoundingBox& p_rhs);

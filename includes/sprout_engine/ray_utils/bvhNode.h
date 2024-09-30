@@ -13,7 +13,7 @@
 class BVHNode : public Traceable
 {
 public:
-    BVHNode(std::vector<Traceable*>& p_traceables, size_t p_first, size_t p_end);
+    BVHNode(std::vector<Traceable*>& p_traceables, size_t p_first, size_t p_end, int currentDepth,  int maxDepth);
 
     bool hit(const Ray& r, Interval<float> p_t, HitInfo& hitInfo) const override;
     BoundingBox getAABB() const override;

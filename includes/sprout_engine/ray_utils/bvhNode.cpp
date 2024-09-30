@@ -2,13 +2,14 @@
 // Created by arpradier on 23/09/2024.
 //
 
-#include "bvh.h"
+#include "bvhNode.h"
 
 #include <algorithm>
 
+#include "bvhLeaf.h"
 #include "RayTracingMaterials/lambertian.h"
 
-BVHNode::BVHNode(std::vector<Traceable*>& p_traceables, size_t p_first, size_t p_end)
+BVHNode::BVHNode(std::vector<Traceable*>& p_traceables, size_t p_first, size_t p_end, int currentDepth, int maxDepth)
 {
     // slice in the longest axis of the BVH
     // to do so, compute the AABB of the current iteration by combining all AABB available
@@ -37,14 +38,23 @@ BVHNode::BVHNode(std::vector<Traceable*>& p_traceables, size_t p_first, size_t p
         m_left = p_traceables[p_first];
         m_right = p_traceables[p_first + 1];
     }
+    else if (currentDepth > maxDepth)
+    {
+        m_left = p_traceables[p_first];
+        m_right = p_traceables[p_first + 1];
+
+        size_t middle = p_first + count / 2;
+        m_left = new BVHLeaf({p_traceables.begin() + p_first, p_traceables.begin() + middle});
+        m_right = new BVHLeaf({p_traceables.begin() + middle, p_traceables.begin() + p_end});
+    }
     else
     {
         // sort the traceables by their position on the sorting axis, then send half the traceables left/right
         sortOnAxis(p_traceables, p_first, p_end, axis);
 
         size_t middle = p_first + count / 2;
-        m_left = new BVHNode(p_traceables, p_first, middle);
-        m_right = new BVHNode(p_traceables, middle, p_end);
+        m_left = new BVHNode(p_traceables, p_first, middle, currentDepth + 1, maxDepth);
+        m_right = new BVHNode(p_traceables, middle, p_end, currentDepth + 1, maxDepth);
     }
 }
 
