@@ -69,7 +69,7 @@ void TraceableManager::render()
     Image result(m_imageWidth, m_imageHeight);
 
     // for each pixel of the camera, fire a ray
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic, 1)
     for(int i = 0; i < m_imageWidth; i++)
     {
         for(int j = 0; j < m_imageHeight; j++)
