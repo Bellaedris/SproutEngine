@@ -82,6 +82,7 @@ endif(WIN32)
 set(PROJECTS
     tests
     framebuffers
+    physics
     raytracer
 )
 
