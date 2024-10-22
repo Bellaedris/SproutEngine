@@ -15,7 +15,7 @@ class SproutApp
 {
 protected:
 	Window window;
-	Camera* cam;
+	Camera* mainCamera;
 
     int m_width, m_height;
 
