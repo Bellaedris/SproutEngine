@@ -29,3 +29,38 @@ brew install cmake assimp glm glfw freetype
 cmake -S . -B build
 cmake --build build -j$(sysctl -n hw.logicalcpu)
 ```
+
+# Features
+The project is divided into different targets, each focusing on an aspect of realtime rendering.
+## Rasterization
+Realtime rasterization rendering. As of now, is implemented:
+- model loading and displaying, through the graphics pipeline
+- Blinn lighting model
+- Chromatic aberrations through framebuffers
+
+In progress:
+- Frustum culling
+- Shadow mapping
+
+![](resources/readme/sproutEngine.png)
+
+## Raytracing
+Raytracing on both CPU and GPU. Implemented on the GPU side:
+- Direct illumination and shadows on spheres
+- Movement though the scene (No way, realtime???)
+
+![](resources/readme/GPU%20sphere.webp)
+
+On the CPU side:
+- Light bounces, with different material types (lambertians, dielectrics, mettalic)
+- Antialiasing 
+- BVH that can be displayed by rasterization for debugging purposes
+
+![](resources/readme/BVH.webp)
+![](resources/readme/Cool%20render.webp)
+
+## Physics
+Integration of a physics engine to the rendering. Implemented:
+- Rigidbody physics, without collisions as of now
+- Basic physics solver, running on a parallel thread. Can be paused, resumed. 
+- Spring joints (in progress)
