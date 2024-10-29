@@ -5,14 +5,13 @@
 #include <sprout_engine/texture.h>
 #include <sprout_engine/line.h>
 #include <sprout_engine/utils.h>
-#include <sprout_engine/ray_utils/bvh.h>
+#include <sprout_engine/ray_utils/bvhNode.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/dielectrics.h>
 
 #include "sprout_engine/ray_utils/traceableManager.h"
 #include <sprout_engine/ray_utils/Traceables/sphere.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/lambertian.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/metallic.h>
-#include <sprout_engine/ray_utils/Traceables/box.h>
 
 std::string resources_path = "../../resources/";
 
@@ -37,7 +36,7 @@ public:
     {
         //read a mesh and create a camera
         m_model = Model(resources_path + "models/cornell-box.obj");
-        cam = new Camera({0, 0, 0}, {0, 1, 0}, 0, -90.f, 0.1f, 100.f, 70.f, (float)width() / (float)height());
+        mainCamera = new Camera({0, 0, 0}, {0, 1, 0}, 0, -90.f, 0.1f, 100.f, 70.f, (float)width() / (float)height());
         m_quad = Mesh::generatePlane();
         m_shader = Shader("texture.vs", "texture.fs");
         m_debugShader = Shader("default.vs", "default.fs");
@@ -45,11 +44,11 @@ public:
         m_compute = ComputeShader("raytrace.cs");
 
         //add traceable objects
-        m_traceables.setCamera(cam);
+        m_traceables.setCamera(mainCamera);
         m_traceables.setAspectRatio((float)width() / (float)height());
         m_traceables.setImageWidth(width());
 
-        m_traceablesBVH.setCamera(cam);
+        m_traceablesBVH.setCamera(mainCamera);
         m_traceablesBVH.setAspectRatio((float)width() / (float)height());
         m_traceablesBVH.setImageWidth(width());
 
@@ -75,7 +74,7 @@ public:
 
         auto start = std::chrono::high_resolution_clock::now();
 
-        auto world = new BVHNode(traceables, 0, traceables.size());
+        auto world = new BVHNode(traceables, 0, traceables.size(), 0, 20);
 
         auto bvhEnd = std::chrono::high_resolution_clock::now();
 
@@ -163,12 +162,12 @@ public:
             m_compute.uniform_data("imageOutput", 0);
             m_compute.uniform_data("sphericalCoords", 1);
             //send camera datas
-            m_compute.uniform_data("fov", cam->getFov());
-            m_compute.uniform_data("cameraPos", cam->get_position());
-            m_compute.uniform_data("aspectRatio", cam->getAspectRatio());
-            m_compute.uniform_data("camDir", cam->getDir());
-            m_compute.uniform_data("camRight", cam->getRight());
-            m_compute.uniform_data("camUp", cam->getUp());
+            m_compute.uniform_data("fov", mainCamera->getFov());
+            m_compute.uniform_data("cameraPos", mainCamera->get_position());
+            m_compute.uniform_data("aspectRatio", mainCamera->getAspectRatio());
+            m_compute.uniform_data("camDir", mainCamera->getDir());
+            m_compute.uniform_data("camRight", mainCamera->getRight());
+            m_compute.uniform_data("camUp", mainCamera->getUp());
 
             m_compute.dispatch(width(), height(), 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -186,7 +185,7 @@ public:
             //m_model.draw(m_debugShader);
 
             m_AABBDisplay.use();
-            m_AABBDisplay.uniform_data("mvpMatrix", cam->projection() * cam->view());
+            m_AABBDisplay.uniform_data("mvpMatrix", mainCamera->projection() * mainCamera->view());
             m_traceables.drawBoundingBoxes(m_AABBDisplay, BVHMaxDisplayDepth);
         }
 

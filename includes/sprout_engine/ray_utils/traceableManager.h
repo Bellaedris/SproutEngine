@@ -18,7 +18,7 @@
  */
 class TraceableManager
 {
-private:
+protected:
     std::vector<Traceable*> m_traceables;
 
     // rendering settings

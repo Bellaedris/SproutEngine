@@ -97,8 +97,15 @@ bool intersectSphere(in Ray r, in Sphere s, float tmin, float tmax, inout HitInf
 
 struct DirectionalLight
 {
-    vec3 dir;
-    vec3 color;
+    vec4 ambiant;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 dir;
+};
+
+layout(std140, binding = 0) uniform Lights
+{
+    DirectionalLight lights[50];
 };
 
 #define LIGHT_NUMBER 2
@@ -140,13 +147,13 @@ vec3 rayColor(in Ray r, in Scene scene)
         for(int i = 0; i < LIGHT_NUMBER; i++)
         {
             //bounce a ray towards the light to check shadows
-            Ray visibility = Ray(hit.intersection + hit.normal * 0.0001, -scene.lights[i].dir - hit.intersection);
+            Ray visibility = Ray(hit.intersection + hit.normal * 0.0001, -scene.lights[i].dir.xyz - hit.intersection);
             HitInfo hitVisibility;
             if (!hitScene(scene, visibility, 0.0001, 1000000, hitVisibility))
             {
-                float cosTheta = max(dot(hit.normal, -scene.lights[i].dir), 0);
+                float cosTheta = max(dot(hit.normal, -scene.lights[i].dir.xyz), 0);
 
-                color += scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[i].color * cosTheta;
+                color += scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[i].diffuse.xyz * cosTheta;
             }
         }
     }
@@ -193,10 +200,10 @@ void main()
     scene.spheres[0] = s1;
     scene.spheres[1] = s2;
 
-    DirectionalLight light = DirectionalLight(normalize(vec3(1, -1, -1)), vec3(.9, 0, 0));
+    DirectionalLight light = DirectionalLight(vec4(0, 0, 0, 0), vec4(.9, 0, 0, 0), vec4(0, 0, 0, 0), normalize(vec4(1, -1, -1, 0)));
     scene.lights[0] = light;
 
-    DirectionalLight light2 = DirectionalLight(normalize(vec3(-1, -1, -1)), vec3(0, 0, .9));
+    DirectionalLight light2 = DirectionalLight(vec4(0, 0, 0, 0), vec4(0, 0, .9, 1.f), vec4(0, 0, 0, 1), normalize(vec4(-1, -1, -1, 0.f)));
     scene.lights[1] = light2;
 
     scene.materials[0] = m1;
