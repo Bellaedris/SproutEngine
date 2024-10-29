@@ -20,6 +20,8 @@ public:
     void use();
     void dispatch(unsigned int x, unsigned int y, unsigned int z);
 
+    [[nodiscard]] unsigned int GetId() const {return id;}
+
     GLint get_location(const std::string &name) const
     {
         return glGetUniformLocation(id, name.c_str());

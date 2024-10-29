@@ -6,8 +6,16 @@
 
 #include <IMGUI/imgui.h>
 
-Entity::Entity(const std::string &path, bool flip_uv)
-    : m_model(path, flip_uv) {}
+Entity::Entity(const std::string& path, const std::string& name, bool flip_uv)
+    : m_model(path, flip_uv)
+    , m_name(name)
+{}
+
+void Entity::UpdatePosition(const glm::vec3& position)
+{
+    m_transform.m_pos = position;
+    m_transform.computeModelMatrix();
+}
 
 void Entity::drawInspector() {
     if(ImGui::TreeNode(m_name.c_str()))

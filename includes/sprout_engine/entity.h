@@ -9,20 +9,21 @@
 #include "inspectable.h"
 
 class Entity : public Inspectable {
-protected:
-    Transform m_transform;
 public:
     const Transform &getTransform() const;
 
     const Model &getModel() const;
 
 protected:
+    Transform m_transform;
     Model m_model;
 
     std::string m_name{"entity"};
 
 public:
-    explicit Entity(const std::string& path, bool flip_uv = false);
+    explicit Entity(const std::string& path, const std::string& name = "entity", bool flip_uv = false);
+
+    void UpdatePosition(const glm::vec3& position);
 
     void draw(Shader &p_shader);
     void draw(Shader &p_shader, const Frustum& p_frustum, const Transform& p_transform);

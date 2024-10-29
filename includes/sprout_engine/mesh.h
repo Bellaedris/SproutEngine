@@ -193,7 +193,7 @@ public:
 		s.use();
 
         // if there is no texture, use the material
-        if (m_textures.size() < 1)
+        if (m_textures.empty())
         {
             s.uniform_data("has_texture", 1);
             s.uniform_data("mat.diffuse", m_material.diffuse);
@@ -218,7 +218,7 @@ public:
         }
 
 		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
 		glBindVertexArray(0);
 	};
 

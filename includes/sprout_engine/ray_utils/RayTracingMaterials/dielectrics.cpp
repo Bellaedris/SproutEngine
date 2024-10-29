@@ -41,7 +41,7 @@ bool Dielectric::scatter(const Ray& p_rayIn, const HitInfo& p_hit, Color& p_colo
 
 double Dielectric::reflectance(float p_cosine) const
 {
-    float r0 = (1 - m_refractiveIndex) / (1 + m_refractiveIndex);
+    float r0 = (1.f - m_refractiveIndex) / (1.f + m_refractiveIndex);
     r0 *= r0;
-    return r0 + (1 - r0) * std::pow((1 - p_cosine), 5);
+    return r0 + (1.f - r0) * std::pow((1.f - p_cosine), 5.f);
 }
