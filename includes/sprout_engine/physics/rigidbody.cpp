@@ -9,7 +9,7 @@ Rigidbody::Rigidbody()
     , m_speed({0, 0, 0})
     , m_acceleration({0, 0, 0})
     , m_drag({0, 0, 0})
-    , m_mass(0)
+    , m_mass(1)
 {}
 
 Rigidbody::Rigidbody(const glm::vec3& position, float mass)

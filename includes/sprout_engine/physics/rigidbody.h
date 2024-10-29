@@ -12,17 +12,17 @@
 class Rigidbody
 {
 protected:
-    glm::vec3 m_position;
-    glm::vec3 m_speed;
-    glm::vec3 m_acceleration;
     glm::vec3 m_drag;
     glm::vec3 m_externalForce{0, 0, 0};
 
+public:
     float m_mass;
+    glm::vec3 m_position;
+    glm::vec3 m_speed;
+    glm::vec3 m_acceleration;
 
     bool isStatic{false};
 
-public:
     Rigidbody();
     Rigidbody(const glm::vec3& position, float mass);
     Rigidbody(const glm::vec3& position, const glm::vec3& speed, const glm::vec3& acceleration, float mass);

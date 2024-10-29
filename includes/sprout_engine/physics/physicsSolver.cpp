@@ -6,16 +6,21 @@
 
 #include <chrono>
 
-PhysicsSolver::PhysicsSolver(const std::vector<Rigidbody*>& rigidbodies, const glm::vec3& gravity)
-    : m_rigidbodies(rigidbodies)
+PhysicsSolver::PhysicsSolver(const std::vector<PhysicsEntity*>& rigidbodies, const glm::vec3& gravity)
+    : m_physicsEntities(rigidbodies)
     , m_gravity(gravity) {}
+
+void PhysicsSolver::SetRunningState(bool state)
+{
+    isRunning.store(state);
+}
 
 [[noreturn]] void PhysicsSolver::run()
 {
     auto previousTime = std::chrono::high_resolution_clock::now();
     double accumulatedTime = 0.;
 
-    while(true)
+    while(isRunning.load())
     {
         auto currentTime = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsedTime = currentTime - previousTime;
@@ -35,15 +40,17 @@ PhysicsSolver::PhysicsSolver(const std::vector<Rigidbody*>& rigidbodies, const g
         }
 
         // eventually, sleep for a short duration?
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
 void PhysicsSolver::solve(float deltaTime)
 {
     m_mutex.lock();
-    for (auto& rb : m_rigidbodies)
+    for (auto& entity : m_physicsEntities)
     {
-        rb->updatePosition(deltaTime, m_gravity);
+        entity->m_rb.updatePosition(deltaTime, m_gravity);
+        entity->UpdatePosition(entity->m_rb.m_position);
     }
     m_mutex.unlock();
     for(auto& joint : m_joints)

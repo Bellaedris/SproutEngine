@@ -19,8 +19,8 @@ public:
 
     int init() override
     {
-        simulatedSpheres.emplace_back(resources_path + "models/sphere.obj");
-        simulatedSpheres.emplace_back(resources_path + "models/sphere.obj");
+        simulatedSpheres.emplace_back(new PhysicsEntity(resources_path + "models/sphere.obj", "Sphere1"));
+        simulatedSpheres.emplace_back(new PhysicsEntity(resources_path + "models/sphere.obj", "Sphere2"));
         camera = Camera({0, 0, 10}, {0, 1, 0}, 0.f, -90.f, 0.01f, 1000.f, 80.f, (float)m_width / (float)m_height);
         setActiveCamera(&camera);
         trajectoryRenderer = LineRenderer(&camera);
@@ -41,34 +41,9 @@ public:
         //
         // glm::vec3 accel = gravity / mass;
 
-        // float timeStep = 0.1; // s
-        // for(int i = 0; i < 1000; i++)
-        // {
-        //     glm::vec3 norm_speed = glm::normalize(speed);
-        //     if (glm::length(norm_speed) == 0.f)
-        //         drag = {0.f, 0.f, 0.f};
-        //     else
-        //         drag = -0.3136f * glm::length(speed) * glm::length(speed) * norm_speed;
-        //     accel = (gravity + drag) / mass;
-        //
-        //     speed = speed + accel * timeStep;
-        //     pos = pos + speed * timeStep;
-        //
-        //     speedEvolution[i] = speed.y;
-        //     heightEvolution[i] = pos.y;
-        // }
+        spring = new SpringJoint(&simulatedSpheres[0]->m_rb, &simulatedSpheres[1]->m_rb, 1.f, 1.f);
 
-        rb = Rigidbody({0, 0, 0}, 10);
-        rb2 = Rigidbody({1, 0, 0}, 10);
-        rb2.setStatic(true);
-        std::vector<Rigidbody*> rigidbodies = {&rb, &rb2};
-
-        spring = new SpringJoint(&rb, &rb2, 1.f, 1.f);
-
-        solver = PhysicsSolver(rigidbodies, gravity);
-        solver.addJoint(spring);
-        physicsThread = std::thread(&PhysicsSolver::run, solver);
-        solver.addJoint(spring);
+        solver = PhysicsSolver(simulatedSpheres, gravity);
         solver.addJoint(spring);
 
         return 0;
@@ -84,21 +59,34 @@ public:
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("PhysicsTests");
-            ImGui::PlotLines("height", heightEvolution, IM_ARRAYSIZE(heightEvolution), 0, NULL, 0.f, 4000.f, ImVec2(300, 200));
-        ImGui::PlotLines("speed", speedEvolution, IM_ARRAYSIZE(speedEvolution), 0, NULL, -20.f, 0.f, ImVec2(300, 200));
+            // ImGui::PlotLines("height", heightEvolution, IM_ARRAYSIZE(heightEvolution), 0, NULL, 0.f, 4000.f, ImVec2(300, 200));
+            // ImGui::PlotLines("speed", speedEvolution, IM_ARRAYSIZE(speedEvolution), 0, NULL, -20.f, 0.f, ImVec2(300, 200));
+            if(ImGui::Button("Toggle Simulation"))
+            {
+                if (isSimulationRunning)
+                {
+                    solver.SetRunningState(false);
+                    physicsThread.join();
+                }
+                else
+                {
+                    solver.SetRunningState(true);
+                    physicsThread = std::thread(&PhysicsSolver::run, std::ref(solver));
+                }
+                isSimulationRunning = !isSimulationRunning;
+            }
         ImGui::End();
 
         ImGui::Begin("Inspector");
         for(auto& e : simulatedSpheres)
         {
-            e.drawInspector();
+            e->drawInspector();
         }
         ImGui::End();
 
-        int index = 0;
-        for(auto &e : simulatedSpheres)
+        for(const auto &e : simulatedSpheres)
         {
-            glm::mat4 model = index == 0 ? glm::translate(e.getTransform().getModelMatrix(), rb.GetPosition()) : glm::translate(e.getTransform().getModelMatrix(), rb2.GetPosition());
+            glm::mat4 model = e->getTransform().getModelMatrix();
             glm::mat4 view = mainCamera->view();
             glm::mat4 projection = mainCamera->projection();
             glm::mat4 normalMatrix = glm::transpose(glm::inverse(model));
@@ -113,8 +101,7 @@ public:
 
             light.send_to_shader(mainShader, 0);
 
-            e.draw(mainShader);
-            index++;
+            e->draw(mainShader);
         }
 
         // draw a line between the two rbs
@@ -123,9 +110,6 @@ public:
         linesShader.use();
         linesShader.uniform_data("color", glm::vec4(1, 0, 0, 1));
         trajectoryRenderer.draw(linesShader);
-
-        std::cout << "Pos: " << rb.GetPosition().x << " " << rb.GetPosition().y << " " << rb.GetPosition().z << std::endl;
-        std::cout << "Speed: " << rb.GetSpeed().x << " " << rb.GetSpeed().y << " " << rb.GetSpeed().z << std::endl;
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -141,7 +125,7 @@ public:
     }
 
 protected:
-    std::vector<Entity> simulatedSpheres;
+    std::vector<PhysicsEntity*> simulatedSpheres;
     Camera camera;
     LineRenderer trajectoryRenderer;
     Shader mainShader;
@@ -154,6 +138,8 @@ protected:
 
     std::thread physicsThread;
     PhysicsSolver solver;
+
+    bool isSimulationRunning{};
 
     float speedEvolution[1000];
     float heightEvolution[1000];
