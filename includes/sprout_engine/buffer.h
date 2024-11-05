@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -14,16 +15,37 @@
 //
 // };
 
+template<typename T>
 class UniformBuffer //: public Buffer
 {
 private:
     unsigned int id{};
+    unsigned int binding{};
 
 public:
-    UniformBuffer() = default;
-    UniformBuffer(size_t size);
+    UniformBuffer()
+    {
+        glGenBuffers(1, &id);
+    }
 
-    void Allocate(const void* data, size_t size);
+    ~UniformBuffer()
+    {
+        glDeleteBuffers(1, &id);
+    }
+
+    void Allocate(size_t size)
+    {
+        glNamedBufferData(id, sizeof(T) * size, nullptr, GL_STATIC_DRAW);
+    }
+
+    void Update(const std::vector<T>& data)
+    {
+        glNamedBufferSubData(id, 0, sizeof(T) * data.size(), data.data());
+    }
+
+    void Bind(GLuint bindingPoint) const
+    {
+        glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, id);
+    }
 };
-
 
