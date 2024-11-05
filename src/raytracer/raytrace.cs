@@ -25,24 +25,92 @@ vec3 rayAt(Ray r, float t)
 
 struct HitInfo
 {
-//! intersection point
     vec3 intersection;
-//! normal at the intersection point
     vec3 normal;
-//! distance at which the intersection happened
     float distance;
-//! true if front, false otherwise
     bool frontFace;
-//! id of the material used by the primitive
     int matIndex;
 };
 
+// TODO implement emissive + vec4 all
 struct Material
 {
-    vec3 ambiant;
-    vec3 diffuse;
-    vec3 specular;
+    vec4 diffuse;
+    vec4 emissive;
 };
+
+layout(binding = 4) uniform materialsData
+{
+    Triangle materials[100];
+};
+
+struct Triangle
+{
+    vec4 a;
+    vec4 b;
+    vec4 c;
+    vec4 na;
+    vec4 nb;
+    vec4 nc;
+};
+
+layout(binding = 2) uniform triangles
+{
+    Triangle data[100];
+};
+
+uniform int numberOfTriangles;
+
+bool intersectTriangle(in Ray r, in Triangle tri, float tmin, float tmax, inout HitInfo hit)
+{
+    float epsilon = 0.0001f;
+
+    vec3 edge1 = tri.b.xyz - tri.a.xyz;
+    vec3 edge2 = tri.c.xyz - tri.a.xyz;
+    vec3 ray_cross_e2 = cross(r.direction, edge2);
+    float det = dot(edge1, ray_cross_e2);
+
+    if (det > -epsilon && det < epsilon)
+    return false;    // This ray is parallel to this triangle.
+
+    float inv_det = 1.0 / det;
+    vec3 s = r.origin - tri.a.xyz;
+    float u = inv_det * dot(s, ray_cross_e2);
+
+    if (u < 0 || u > 1)
+    return false;
+
+    vec3 s_cross_e1 = cross(s, edge1);
+    float v = inv_det * dot(r.direction, s_cross_e1);
+
+    if (v < 0 || u + v > 1)
+    return false;
+
+    // At this stage we can compute t to find out where the intersection point is on the line.
+    float t = inv_det * dot(edge2, s_cross_e1);
+
+    if (t > tmin && t < tmax) // ray intersection
+    {
+        hit.intersection = r.origin + r.direction * t;
+        hit.distance = t;
+        float w = 1 - u - v;
+        vec3 norm = u * tri.na.xyz + v * tri.nb.xyz + w * tri.nc.xyz / 3.f;
+
+        if (dot(norm, r.direction) > 0.f) {
+            hit.normal = -norm;
+            hit.frontFace = false;
+        }
+        // same side, we are outside
+        else
+        {
+            hit.normal = norm;
+            hit.frontFace = true;
+        }
+        return true;
+    }
+    else // This means that there is a line intersection but not a ray intersection.
+    return false;
+}
 
 struct Sphere
 {
@@ -103,18 +171,19 @@ struct DirectionalLight
     vec4 dir;
 };
 
-layout(std140, binding = 0) uniform Lights
+layout(std140, binding = 3) uniform Lights
 {
     DirectionalLight lights[50];
 };
 
-#define LIGHT_NUMBER 2
+uniform int numberOfLights;
+
 #define MATERIAL_NUMBER 2
 
 struct Scene
 {
     Sphere spheres[SPHERE_NUMBER];
-    DirectionalLight lights[LIGHT_NUMBER];
+//DirectionalLight lights[LIGHT_NUMBER];
     Material materials[MATERIAL_NUMBER];
 };
 
@@ -124,9 +193,9 @@ bool hitScene(in Scene scene, in Ray r, float hmin, float hmax, inout HitInfo hi
     float closest = hmax;
     bool hasHit = false;
 
-    for(int i = 0; i < SPHERE_NUMBER; i++)
+    for(int i = 0; i < numberOfTriangles; i++)
     {
-        if (intersectSphere(r, scene.spheres[i], hmin, closest, current))
+        if (intersectTriangle(r, data[i], hmin, closest, current))
         {
             hit = current;
             closest = hit.distance;
@@ -143,17 +212,17 @@ vec3 rayColor(in Ray r, in Scene scene)
 
     if (hitScene(scene, r, 0.0001, 1000000, hit))
     {
-        //color = vec3(hit.normal);
-        for(int i = 0; i < LIGHT_NUMBER; i++)
+        //color = vec3(hit.normal + 1.f * .5f);
+        for(int i = 0; i < numberOfLights; i++)
         {
             //bounce a ray towards the light to check shadows
-            Ray visibility = Ray(hit.intersection + hit.normal * 0.0001, -scene.lights[i].dir.xyz - hit.intersection);
+            Ray visibility = Ray(hit.intersection + hit.normal * 0.0001, -lights[i].dir.xyz - hit.intersection);
             HitInfo hitVisibility;
             if (!hitScene(scene, visibility, 0.0001, 1000000, hitVisibility))
             {
-                float cosTheta = max(dot(hit.normal, -scene.lights[i].dir.xyz), 0);
+                float cosTheta = max(dot(hit.normal, -lights[i].dir.xyz), 0);
 
-                color += scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * scene.lights[i].diffuse.xyz * cosTheta;
+                color += /*scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * */lights[i].diffuse.xyz * cosTheta;
             }
         }
     }
@@ -175,6 +244,8 @@ uniform vec3 camDir;
 uniform vec3 camRight;
 uniform vec3 camUp;
 
+uniform int spp;
+
 void main()
 {
     //scene definition
@@ -189,22 +260,22 @@ void main()
     s2.radius = 100;
     s2.matIndex = 1;
 
-    Material m1;
-    m1.ambiant = vec3(.05, .0, .0);
-    m1.diffuse = vec3(.9, .9, .9);
-
-    Material m2;
-    m2.ambiant = vec3(.0, 0.05, .0);
-    m2.diffuse = vec3(.9, .9, .9);
+//    Material m1;
+//    m1.ambiant = vec3(.05, .0, .0);
+//    m1.diffuse = vec3(.9, .9, .9);
+//
+//    Material m2;
+//    m2.ambiant = vec3(.0, 0.05, .0);
+//    m2.diffuse = vec3(.9, .9, .9);
 
     scene.spheres[0] = s1;
     scene.spheres[1] = s2;
 
-    DirectionalLight light = DirectionalLight(vec4(0, 0, 0, 0), vec4(.9, 0, 0, 0), vec4(0, 0, 0, 0), normalize(vec4(1, -1, -1, 0)));
-    scene.lights[0] = light;
-
-    DirectionalLight light2 = DirectionalLight(vec4(0, 0, 0, 0), vec4(0, 0, .9, 1.f), vec4(0, 0, 0, 1), normalize(vec4(-1, -1, -1, 0.f)));
-    scene.lights[1] = light2;
+    //    DirectionalLight light = DirectionalLight(vec4(0, 0, 0, 0), vec4(.9, 0, 0, 0), vec4(0, 0, 0, 0), normalize(vec4(1, -1, -1, 0)));
+    //    scene.lights[0] = light;
+    //
+    //    DirectionalLight light2 = DirectionalLight(vec4(0, 0, 0, 0), vec4(0, 0, .9, 1.f), vec4(0, 0, 0, 1), normalize(vec4(-1, -1, -1, 0.f)));
+    //    scene.lights[1] = light2;
 
     scene.materials[0] = m1;
     scene.materials[1] = m2;
@@ -228,9 +299,8 @@ void main()
 
     vec3 viewportUpperLeft = cameraPos - focal * -camDir - viewportU / 2.f - viewportV / 2.f;
 
-    int samples = 10;
     vec3 color = vec3(0);
-    for(int k = 0; k < samples; k++)
+    for(int k = 0; k < spp; k++)
     {
         float offsetx = random(vec2(x + k, y + k));
         float offsety = random(vec2(offsetx + k, y + k));
@@ -241,7 +311,7 @@ void main()
 
         color += rayColor(r, scene);
     }
-    color /= samples;
+    color /= spp;
 
     vec4 finalColor = vec4(color, 1);
 

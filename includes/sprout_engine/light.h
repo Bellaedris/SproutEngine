@@ -3,15 +3,34 @@
 
 #include <glm/glm.hpp>
 
-#include<sprout_engine/shader.h>
-#include<sprout_engine/color.h>
+#include <sprout_engine/shader.h>
+#include <sprout_engine/color.h>
+#include <sprout_engine/inspectable.h>
 
 #include <string>
 
+#include <IMGUI/imgui.h>
+
 using namespace glm;
 
-class Light //: public Inspectable
+class Light : public Inspectable
 {
+public:
+    [[nodiscard]] Color GetAmbiant() const
+    {
+        return ambiant;
+    }
+
+    [[nodiscard]] Color GetDiffuse() const
+    {
+        return diffuse;
+    }
+
+    [[nodiscard]] Color GetSpecular() const
+    {
+        return specular;
+    }
+
 protected:
     Color ambiant;
     Color diffuse;
@@ -29,13 +48,14 @@ public:
     };
 
     virtual void send_to_shader(Shader &s, int index) = 0;
-    //virtual void drawInspector() = 0;
+    virtual void drawInspector() = 0;
 };
 
 class DirectionalLight : public Light
 {
 protected:
     vec4 direction;
+    std::string name;
 
 public:
     DirectionalLight() : Light(), direction(0., -1., 0., 1.) {};
@@ -49,6 +69,8 @@ public:
 
     void set_direction(float* dir) { direction = vec4(dir[0], dir[1], dir[2], 1.f); };
 
+    void setName(int index) { name = std::string("Directional light") + std::to_string(index); }
+
     void send_to_shader(Shader& s, int index) override
     {
         s.use();
@@ -58,45 +80,54 @@ public:
         s.uniform_data(std::string("dirLights[").append(std::to_string(index)).append("].specular"), specular[0], specular[1], specular[2], specular[3]);
     };
 
-    // void drawInspector() override
-    // {
-    //
-    // }
-};
-
-class PointLight : public Light
-{
-protected:
-    vec4 position;
-    float constant;
-    float linear;
-    float quadratic;
-
-public:
-    PointLight() : Light(), position(0., 0., 0., 1.), constant(1.f), linear(.22f), quadratic(.2f) {};
-    PointLight(vec4 position, vec4 ambiant, vec4 diffuse, vec4 specular, float constant = 1.f, float linear = .22f, float quadratic = .2f)
-        : Light(ambiant, diffuse, specular),  position(position), constant(constant), linear(linear), quadratic(quadratic) {};
-    
-    void send_to_shader(Shader& s, int index) override
+    void drawInspector() override
     {
-        s.use();
-        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].position"), position[0], position[1], position[2], position[3]);
-        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].ambiant"), ambiant[0], ambiant[1], ambiant[2], ambiant[3]);
-        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].diffuse"), diffuse[0], diffuse[1], diffuse[2], diffuse[3]);
-        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].specular"), specular[0], specular[1], specular[2], specular[3]);
+        if(ImGui::TreeNode(name.c_str()))
+        {
+            ImGui::InputFloat4("direction", glm::value_ptr(direction));
 
-        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].constant"), constant);
-        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].linear"), linear);
-        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].quadratic"), quadratic);
-    };
+            ImGui::ColorPicker4("ambiant", glm::value_ptr(ambiant));
+            ImGui::ColorPicker4("diffuse", glm::value_ptr(diffuse));
+            ImGui::ColorPicker4("specular", glm::value_ptr(specular));
+
+            ImGui::TreePop();
+        }
+    }
 };
 
-struct SpotLight
-{
-    vec3 position;
-    vec3 direction;
-    float cutoff;
-
-
-};
+// class PointLight : public Light
+// {
+// protected:
+//     vec4 position;
+//     float constant;
+//     float linear;
+//     float quadratic;
+//
+// public:
+//     PointLight() : Light(), position(0., 0., 0., 1.), constant(1.f), linear(.22f), quadratic(.2f) {};
+//     PointLight(vec4 position, vec4 ambiant, vec4 diffuse, vec4 specular, float constant = 1.f, float linear = .22f, float quadratic = .2f)
+//         : Light(ambiant, diffuse, specular),  position(position), constant(constant), linear(linear), quadratic(quadratic) {};
+//
+//     void send_to_shader(Shader& s, int index) override
+//     {
+//         s.use();
+//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].position"), position[0], position[1], position[2], position[3]);
+//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].ambiant"), ambiant[0], ambiant[1], ambiant[2], ambiant[3]);
+//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].diffuse"), diffuse[0], diffuse[1], diffuse[2], diffuse[3]);
+//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].specular"), specular[0], specular[1], specular[2], specular[3]);
+//
+//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].constant"), constant);
+//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].linear"), linear);
+//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].quadratic"), quadratic);
+//     };
+// };
+//
+// struct SpotLight
+// {
+//     vec3 position;
+//     vec3 direction;
+//     float cutoff;
+//
+//
+// };
 #endif
