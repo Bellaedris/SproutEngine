@@ -102,8 +102,8 @@ public:
         }
 
         m_triangles = m_mesh.GetTriangleData();
-        m_trianglesData.Bind(2);
-        m_matData.Bind(4);
+        m_trianglesData.Bind(3);
+        m_matData.Bind(5);
 
         m_trianglesData.Allocate(100);
         m_trianglesData.Update(m_mesh.GetTriangleData());
@@ -113,7 +113,7 @@ public:
         m_matData.Update(m_mesh.GetMaterialData());
 
         // add a few lights and init our ubo
-        m_lightsData.Bind(3);
+        m_lightsData.Bind(4);
         m_lightsData.Allocate(50);
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -134,6 +134,9 @@ public:
 
         m_texture = Texture(width(), height());
         glBindImageTexture(0, m_texture.get_id(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+        m_previousFrameTexture = Texture(width(), height());
+        glBindImageTexture(2, m_previousFrameTexture.get_id(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
         glViewport(0, 0, width(), height());
         glClearColor(.1f, .1f, .1f, 1.f);
@@ -167,12 +170,12 @@ public:
             int milli = (int) (gpu_last_frame / 1000000);
             int micro = (int) ((gpu_last_frame / 1000) % 1000);
             ImGui::Text(
-                    "cpu %03dms\ngpu %02dms % 03dus",
+                    "cpu %03dms\ngpu %02dms % 03dus\naccumulated %d frames",
                     cpu_last_frame,
-                    milli, micro
+                    milli, micro, frameNumber
             );
         }
-        if(ImGui::CollapsingHeader("RayTrace settings", true))
+        if(ImGui::CollapsingHeader("RayTrace GPU", true))
         {
             if(ImGui::Button("Update dir light"))
             {
@@ -201,8 +204,10 @@ public:
                 m_traceables.setMaxBounces(bouncesMaxPerRay);
             }
             ImGui::InputFloat("Emissive intensity modifier", &emissiveIntensity);
-            ImGui::SliderInt("Maximal BVH depth displayed", &BVHMaxDisplayDepth, 0, 30);
-            ImGui::Checkbox("Use BVH", &useBVH);
+            if(ImGui::Button("Reset frame count"))
+            {
+                frameNumber = 0;
+            }
             if (ImGui::Button("Reload compute"))
             {
                 m_sphericalCoordsTexture = Texture(width(), height(), generateDirections());
@@ -210,9 +215,11 @@ public:
                 m_compute = ComputeShader("raytrace.cs");
             }
         }
-        if(ImGui::CollapsingHeader("Rendering", true))
+        if(ImGui::CollapsingHeader("Raytrace CPU", true))
         {
             ImGui::Checkbox("Raytrace GPU", &useRaytrace);
+            ImGui::SliderInt("Maximal BVH depth displayed", &BVHMaxDisplayDepth, 0, 30);
+            ImGui::Checkbox("Use BVH", &useBVH);
             if(ImGui::Button("RayTrace CPU"))
             {
                 auto start = std::chrono::high_resolution_clock::now();
@@ -231,11 +238,13 @@ public:
         {
             //render the image
             m_sphericalCoordsTexture.use(GL_TEXTURE1);
+            m_previousFrameTexture.use(GL_TEXTURE2);
             m_compute.use();
 
             // send texture datas
             m_compute.uniform_data("imageOutput", 0);
             m_compute.uniform_data("sphericalCoords", 1);
+            m_compute.uniform_data("lastFrame", 2);
             //send camera datas
             m_compute.uniform_data("fov", mainCamera->getFov());
             m_compute.uniform_data("cameraPos", mainCamera->get_position());
@@ -243,6 +252,8 @@ public:
             m_compute.uniform_data("camDir", mainCamera->getDir());
             m_compute.uniform_data("camRight", mainCamera->getRight());
             m_compute.uniform_data("camUp", mainCamera->getUp());
+            m_compute.uniform_data("time", timeSinceStartup);
+            m_compute.uniform_data("frame", frameNumber);
 
             m_compute.uniform_data("spp", samplesPerPixel);
             m_compute.uniform_data("spb", bouncesMaxPerRay);
@@ -277,6 +288,8 @@ public:
         framerate[values_offset] = 1.f / delta_time;
         values_offset = (values_offset + 1) % IM_ARRAYSIZE(framerate);
 
+        frameNumber += 1;
+
         return 0;
     }
 
@@ -297,6 +310,7 @@ protected:
     Shader m_AABBDisplay;
     ComputeShader m_compute;
     Texture m_texture;
+    Texture m_previousFrameTexture;
     Texture m_sphericalCoordsTexture;
     UniformBuffer<TriangleData> m_trianglesData;
     UniformBuffer<DirLightData> m_lightsData;
@@ -320,6 +334,7 @@ protected:
     int samplesPerPixel = 1;
     int bouncesMaxPerRay = 10;
     int BVHMaxDisplayDepth = 1;
+    int frameNumber = 0;
     float emissiveIntensity = 10.f;
 
     float framerate[90] = {};

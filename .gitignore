@@ -1,6 +1,6 @@
 bin/
 out/
-resources/
+resources/models
 src/terrain_generation
 .vs
 /cmake-build-debug

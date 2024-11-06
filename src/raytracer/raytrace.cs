@@ -4,10 +4,7 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) uniform image2D imageOutput;
 layout(rgba32f, binding = 1) uniform image2D sphericalCoords;
-
-uniform int spp; // samples per pixel
-uniform int spb; // samples per bounces
-uniform float emissiveIntensity;
+layout(rgba32f, binding = 2) uniform image2D lastFrame;
 
 // utilities
 float random (vec2 st) {
@@ -42,11 +39,6 @@ struct Material
     vec4 emissive;
 };
 
-layout(binding = 4) uniform materialsData
-{
-    Material materials[100];
-};
-
 struct Triangle
 {
     vec4 a;
@@ -60,13 +52,6 @@ struct Triangle
     int fillB;
     int fillC;
 };
-
-layout(std140, binding = 2) uniform triangles
-{
-    Triangle data[100];
-};
-
-uniform int numberOfTriangles;
 
 bool intersectTriangle(in Ray r, in Triangle tri, float tmin, float tmax, inout HitInfo hit)
 {
@@ -177,12 +162,27 @@ struct DirectionalLight
     vec4 dir;
 };
 
-layout(std140, binding = 3) uniform Lights
+layout(std140, binding = 3) uniform triangles
+{
+    Triangle data[100];
+};
+
+layout(std140, binding = 4) uniform Lights
 {
     DirectionalLight lights[50];
 };
 
+layout(binding = 5) uniform materialsData
+{
+    Material materials[100];
+};
+
+uniform int numberOfTriangles;
+uniform int spp; // samples per pixel
+uniform int spb; // samples per bounces
+uniform float emissiveIntensity;
 uniform int numberOfLights;
+uniform float time;
 
 bool hitScene(in Ray r, float hmin, float hmax, inout HitInfo hit)
 {
@@ -214,7 +214,7 @@ vec3 rayColor(in Ray r, in int x, in int y)
         {
             //bounce a ray randomly in the normal hemisphere to check ambiant occlusion
             // Generate random offset using the current ray index and current coordinates for randomness
-            ivec2 offset = ivec2(x + i * 6859, y + i * 6843);
+            ivec2 offset = ivec2(x + i * 6859 + time * 41684, y + i * 6843 + time * 2663);
             offset = ivec2(mod(offset, ivec2(imageSize(sphericalCoords) - ivec2(1))));
 
             vec3 randDir = imageLoad(sphericalCoords, offset).rgb;
@@ -249,6 +249,8 @@ uniform vec3 camDir;
 uniform vec3 camRight;
 uniform vec3 camUp;
 
+uniform int frame;
+
 void main()
 {
     //sending the rays
@@ -270,6 +272,10 @@ void main()
 
     vec3 viewportUpperLeft = cameraPos - focal * -camDir - viewportU / 2.f - viewportV / 2.f;
 
+    // copy the previous frame value
+    vec4 lastFrameColor = imageLoad(imageOutput, current);
+    imageStore(lastFrame, current, lastFrameColor);
+
     vec3 color = vec3(0);
     for(int k = 0; k < spp; k++)
     {
@@ -284,7 +290,7 @@ void main()
     }
     color /= spp;
 
-    vec4 finalColor = vec4(color, 1);
+    vec4 finalColor = vec4((color + lastFrameColor.xyz * frame) / float(frame + 1), 1);
 
     imageStore(imageOutput, current, finalColor);
 }

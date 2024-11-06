@@ -21,7 +21,9 @@ protected:
 
 	float delta_time;
 	float last_frame;
+	float timeSinceStartup;
 
+	std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 	std::chrono::high_resolution_clock::time_point frame_begin;
 	std::chrono::high_resolution_clock::time_point frame_end;
 	GLuint frame_time_gpu;

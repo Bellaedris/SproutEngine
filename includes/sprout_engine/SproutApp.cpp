@@ -36,6 +36,8 @@ SproutApp::SproutApp(int width, int height, int major, int minor)
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
+
+    start_time = std::chrono::high_resolution_clock::now();
 }
 
 SproutApp::~SproutApp() {
@@ -80,7 +82,9 @@ int SproutApp::run() {
         float current_time = glfwGetTime();
         delta_time = current_time - last_frame;
         last_frame = current_time;
+
         frame_begin = std::chrono::high_resolution_clock::now();
+        timeSinceStartup = std::chrono::duration<float>(frame_begin - start_time).count();
         glBeginQuery(GL_TIME_ELAPSED, frame_time_gpu);
 
         // handle camera inputs
