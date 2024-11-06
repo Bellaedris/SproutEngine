@@ -11,6 +11,7 @@
 #include <sprout_engine/ray_utils/RayTracingMaterials/dielectrics.h>
 
 #include "sprout_engine/ray_utils/traceableManager.h"
+#include "sprout_engine/ray_utils/gpuMeshReader.h"
 #include <sprout_engine/ray_utils/Traceables/sphere.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/lambertian.h>
 #include <sprout_engine/ray_utils/RayTracingMaterials/metallic.h>
@@ -60,8 +61,10 @@ public:
 
     int init() override
     {
+        srand(time(nullptr));
+
         //read a mesh and create a camera
-        m_model = Model(resources_path + "models/cornell-box.obj");
+        m_mesh = GpuMesh(resources_path + "models/cornell-box.obj");
         mainCamera = new Camera({0, 0, 0}, {0, 1, 0}, 0, -90.f, 0.1f, 100.f, 70.f, (float)width() / (float)height());
         m_quad = Mesh::generatePlane();
         m_shader = Shader("texture.vs", "texture.fs");
@@ -93,7 +96,7 @@ public:
         //traceables.push_back(new Sphere(glm::vec3(-1, 0, -1), .5, m_outerLeftMaterial));
         //traceables.push_back(new Sphere(glm::vec3(1, 0, -1), .5, m_rightMaterial));
 
-        for(int i = 0; i < 100; i++)
+        for(int i = 0; i < 10000; i++)
         {
             traceables.push_back(new Sphere(glm::vec3(Utils::randomRange(0, 10) - 5.f, Utils::randomRange(0, 1), -Utils::randomRange(1, 10)), Utils::randomRange(.05, .2), m_groundMaterial));
         }
@@ -101,42 +104,12 @@ public:
         m_trianglesData.Bind(2);
         m_matData.Bind(4);
 
-        std::vector<MaterialRay> materials;
-
-        // read all triangles to build the data struture
-        for(const auto& m : m_model.getMeshes())
-        {
-            const auto& vertices = m.positions();
-            const auto& indices = m.indices();
-            const auto& normals = m.normals();
-            const auto& mat = m.mat();
-
-            for(int i = 0; i < m.indices().size(); i+=3)
-            {
-                m_triangles.push_back({
-                    {vertices[indices[i]].x, vertices[indices[i]].y, vertices[indices[i]].z, 1.f},
-                    {vertices[indices[i + 1]].x, vertices[indices[i + 1]].y, vertices[indices[i + 1]].z, 1.f},
-                    {vertices[indices[i + 2]].x, vertices[indices[i + 2]].y, vertices[indices[i + 2]].z, 1.f},
-
-                {normals[indices[i]].x, normals[indices[i]].y, normals[indices[i]].z, 1.f},
-                {normals[indices[i + 1]].x, normals[indices[i + 1]].y, normals[indices[i + 1]].z, 1.f},
-                {normals[indices[i + 2]].x, normals[indices[i + 2]].y, normals[indices[i + 2]].z, 1.f},
-                    }
-                );
-            }
-
-            materials.push_back(
-            {
-                mat.diffuse,
-                mat.emissive
-            });
-        }
         m_trianglesData.Allocate(100);
-        m_trianglesData.Update(m_triangles);
+        m_trianglesData.Update(m_mesh.GetTriangleData());
 
         // add the materials inked to the mesh
         m_matData.Allocate(50);
-        m_matData.Update(materials);
+        m_matData.Update(m_mesh.GetMaterialData());
 
         // add a few lights and init our ubo
         m_lightsData.Bind(3);
@@ -202,7 +175,7 @@ public:
         {
             if(ImGui::Button("Update dir light"))
             {
-                std::vector<LightsRay> m_gpuLights;
+                std::vector<DirLightData> m_gpuLights;
                 int index = 0;
                 for(auto& light : m_lights)
                 {
@@ -313,7 +286,7 @@ public:
     }
 
 protected:
-    Model m_model;
+    GpuMesh m_mesh;
     Mesh m_quad;
     Shader m_shader;
     Shader m_debugShader;
@@ -321,9 +294,9 @@ protected:
     ComputeShader m_compute;
     Texture m_texture;
     Texture m_sphericalCoordsTexture;
-    UniformBuffer<TriangleRay> m_trianglesData;
-    UniformBuffer<LightsRay> m_lightsData;
-    UniformBuffer<MaterialRay> m_matData;
+    UniformBuffer<TriangleData> m_trianglesData;
+    UniformBuffer<DirLightData> m_lightsData;
+    UniformBuffer<MaterialData> m_matData;
 
     std::vector<TriangleRay> m_triangles;
     std::vector<DirectionalLight> m_lights;
