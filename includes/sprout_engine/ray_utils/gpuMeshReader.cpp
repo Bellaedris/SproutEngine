@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+
 #include "gpuMeshReader.h"
 #include "sprout_engine/color.h"
 
@@ -57,7 +58,7 @@ void GpuMesh::processMesh(const aiMesh *mesh, const aiScene *scene)
                  {na.x, na.y, na.z, 1.f},
                  {nb.x, nb.y, nb.z, 1.f},
                  {nc.x, nc.y, nc.z, 1.f},
-                 mesh->mMaterialIndex
+                 mesh->mMaterialIndex, 0, 0, 0
         });
     }
 }

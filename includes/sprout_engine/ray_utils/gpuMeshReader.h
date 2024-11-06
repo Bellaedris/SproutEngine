@@ -21,6 +21,9 @@ struct TriangleData
     glm::vec4 nb;
     glm::vec4 nc;
     unsigned int materialId;
+    unsigned int fillA;
+    unsigned int fillB;
+    unsigned int fillC;
 };
 
 struct DirLightData
