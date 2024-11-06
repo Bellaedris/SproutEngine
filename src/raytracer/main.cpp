@@ -101,6 +101,7 @@ public:
             traceables.push_back(new Sphere(glm::vec3(Utils::randomRange(0, 10) - 5.f, Utils::randomRange(0, 1), -Utils::randomRange(1, 10)), Utils::randomRange(.05, .2), m_groundMaterial));
         }
 
+        m_triangles = m_mesh.GetTriangleData();
         m_trianglesData.Bind(2);
         m_matData.Bind(4);
 
@@ -199,6 +200,7 @@ public:
             {
                 m_traceables.setMaxBounces(bouncesMaxPerRay);
             }
+            ImGui::InputFloat("Emissive intensity modifier", &emissiveIntensity);
             ImGui::SliderInt("Maximal BVH depth displayed", &BVHMaxDisplayDepth, 0, 30);
             ImGui::Checkbox("Use BVH", &useBVH);
             if (ImGui::Button("Reload compute"))
@@ -243,8 +245,10 @@ public:
             m_compute.uniform_data("camUp", mainCamera->getUp());
 
             m_compute.uniform_data("spp", samplesPerPixel);
+            m_compute.uniform_data("spb", bouncesMaxPerRay);
             m_compute.uniform_data("numberOfTriangles", static_cast<int>(m_triangles.size()));
             m_compute.uniform_data("numberOfLights", static_cast<int>(m_lights.size()));
+            m_compute.uniform_data("emissiveIntensity", emissiveIntensity);
 
             m_compute.dispatch(width(), height(), 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -298,7 +302,7 @@ protected:
     UniformBuffer<DirLightData> m_lightsData;
     UniformBuffer<MaterialData> m_matData;
 
-    std::vector<TriangleRay> m_triangles;
+    std::vector<TriangleData> m_triangles;
     std::vector<DirectionalLight> m_lights;
 
     // materials
@@ -316,6 +320,7 @@ protected:
     int samplesPerPixel = 1;
     int bouncesMaxPerRay = 10;
     int BVHMaxDisplayDepth = 1;
+    float emissiveIntensity = 10.f;
 
     float framerate[90] = {};
     int values_offset = 0;

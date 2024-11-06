@@ -7,6 +7,7 @@ layout(rgba32f, binding = 1) uniform image2D sphericalCoords;
 
 uniform int spp; // samples per pixel
 uniform int spb; // samples per bounces
+uniform float emissiveIntensity;
 
 // utilities
 float random (vec2 st) {
@@ -35,17 +36,16 @@ struct HitInfo
     int matIndex;
 };
 
-// TODO implement emissive + vec4 all
-//struct Material
-//{
-//    vec4 diffuse;
-//    vec4 emissive;
-//};
-//
-//layout(binding = 4) uniform materialsData
-//{
-//    Material materials[100];
-//};
+struct Material
+{
+    vec4 diffuse;
+    vec4 emissive;
+};
+
+layout(binding = 4) uniform materialsData
+{
+    Material materials[100];
+};
 
 struct Triangle
 {
@@ -55,9 +55,13 @@ struct Triangle
     vec4 na;
     vec4 nb;
     vec4 nc;
+    int matIndex;
+    int fillA;
+    int fillB;
+    int fillC;
 };
 
-layout(binding = 2) uniform triangles
+layout(std140, binding = 2) uniform triangles
 {
     Triangle data[100];
 };
@@ -96,6 +100,7 @@ bool intersectTriangle(in Ray r, in Triangle tri, float tmin, float tmax, inout 
     {
         hit.intersection = r.origin + r.direction * t;
         hit.distance = t;
+        hit.matIndex = tri.matIndex;
         float w = 1 - u - v;
         vec3 norm = u * tri.na.xyz + v * tri.nb.xyz + w * tri.nc.xyz / 3.f;
 
@@ -164,8 +169,6 @@ bool intersectSphere(in Ray r, in Sphere s, float tmin, float tmax, inout HitInf
     return true;
 }
 
-#define SPHERE_NUMBER 2
-
 struct DirectionalLight
 {
     vec4 ambiant;
@@ -181,16 +184,7 @@ layout(std140, binding = 3) uniform Lights
 
 uniform int numberOfLights;
 
-#define MATERIAL_NUMBER 2
-
-struct Scene
-{
-    Sphere spheres[SPHERE_NUMBER];
-//DirectionalLight lights[LIGHT_NUMBER];
-//Material materials[MATERIAL_NUMBER];
-};
-
-bool hitScene(in Scene scene, in Ray r, float hmin, float hmax, inout HitInfo hit)
+bool hitScene(in Ray r, float hmin, float hmax, inout HitInfo hit)
 {
     HitInfo current;
     float closest = hmax;
@@ -208,26 +202,14 @@ bool hitScene(in Scene scene, in Ray r, float hmin, float hmax, inout HitInfo hi
     return hasHit;
 }
 
-vec3 rayColor(in Ray r, in Scene scene, in int x, in int y)
+vec3 rayColor(in Ray r, in int x, in int y)
 {
+    vec3 light = vec3(0);
     vec3 color = vec3(0);
     HitInfo hit;
 
-    if (hitScene(scene, r, 0.0001, 1000000, hit))
+    if (hitScene(r, 0.0001, 1000000, hit))
     {
-        // color = vec3(hit.normal + 1.f * .5f);
-        //        for(int i = 0; i < numberOfLights; i++)
-        //        {
-        //            //bounce a ray towards the light to check shadows
-        //            Ray visibility = Ray(hit.intersection + hit.normal * 0.0001, -lights[i].dir.xyz - hit.intersection);
-        //            HitInfo hitVisibility;
-        //            if (!hitScene(scene, visibility, 0.0001, 1000000, hitVisibility))
-        //            {
-        //                float cosTheta = max(dot(hit.normal, -lights[i].dir.xyz), 0);
-        //
-        //                color += /*scene.materials[hit.matIndex].ambiant + scene.materials[hit.matIndex].diffuse * */lights[i].diffuse.xyz * cosTheta;
-        //            }
-        //        }
         for(int i = 0; i < spb; i++)
         {
             //bounce a ray randomly in the normal hemisphere to check ambiant occlusion
@@ -241,12 +223,13 @@ vec3 rayColor(in Ray r, in Scene scene, in int x, in int y)
 
             Ray visibility = Ray(hit.intersection + hit.normal * 0.0001, randDir);
             HitInfo hitVisibility;
-            if (!hitScene(scene, visibility, 0.0001, 1000000, hitVisibility))
+            if (hitScene(visibility, 0.0001, 1000000, hitVisibility))
             {
-                color += vec3(1f);
+                light += materials[hitVisibility.matIndex].emissive.xyz * emissiveIntensity;
             }
         }
-        color /= spb;
+        light /= spb;
+        color = materials[hit.matIndex].diffuse.xyz * light + materials[hit.matIndex].emissive.xyz;
     }
     else
     {
@@ -268,38 +251,6 @@ uniform vec3 camUp;
 
 void main()
 {
-    //scene definition
-    Scene scene;
-    Sphere s1;
-    s1.center = vec3(0, 0, -1);
-    s1.radius = .5;
-    s1.matIndex = 0;
-
-    Sphere s2;
-    s2.center = vec3(0, -100.5, -1);
-    s2.radius = 100;
-    s2.matIndex = 1;
-
-    //    Material m1;
-    //    m1.ambiant = vec3(.05, .0, .0);
-    //    m1.diffuse = vec3(.9, .9, .9);
-    //
-    //    Material m2;
-    //    m2.ambiant = vec3(.0, 0.05, .0);
-    //    m2.diffuse = vec3(.9, .9, .9);
-
-    scene.spheres[0] = s1;
-    scene.spheres[1] = s2;
-
-    //    DirectionalLight light = DirectionalLight(vec4(0, 0, 0, 0), vec4(.9, 0, 0, 0), vec4(0, 0, 0, 0), normalize(vec4(1, -1, -1, 0)));
-    //    scene.lights[0] = light;
-    //
-    //    DirectionalLight light2 = DirectionalLight(vec4(0, 0, 0, 0), vec4(0, 0, .9, 1.f), vec4(0, 0, 0, 1), normalize(vec4(-1, -1, -1, 0.f)));
-    //    scene.lights[1] = light2;
-
-    // scene.materials[0] = m1;
-    // scene.materials[1] = m2;
-
     //sending the rays
     uvec2 imageDim = gl_NumWorkGroups.xy;
     ivec2 current = ivec2(gl_GlobalInvocationID.xy);
@@ -329,7 +280,7 @@ void main()
         float v = float(y + offsety) / float(imageDim.y);
         Ray r = Ray(cameraPos, viewportUpperLeft + (float(x) + offsetx) * deltaU + (float(y) + offsety) * deltaV - cameraPos);
 
-        color += rayColor(r, scene, x, y);
+        color += rayColor(r, x, y);
     }
     color /= spp;
 
