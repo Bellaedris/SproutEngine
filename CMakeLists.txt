@@ -125,7 +125,7 @@ function(create_project_from_sources project)
             "src/${project}/*.tcs"
             "src/${project}/*.tes"
             "src/${project}/*.gs"
-            "src/${project}/*.cs"
+            "src/${project}/*.comp"
     )
 	if (project STREQUAL "")
 		SET(replaced "")
@@ -158,7 +158,7 @@ function(create_project_from_sources project)
              "src/${project}/*.tcs"
              "src/${project}/*.tes"
              "src/${project}/*.gs"
-             "src/${project}/*.cs"
+             "src/${project}/*.comp"
     )
 	# copy dlls
 	file(GLOB DLLS "dlls/*.dll")

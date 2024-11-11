@@ -6,7 +6,14 @@
 
 ComputeShader::ComputeShader(const char* p_filename)
 {
-    const char* shaderSource = read_file(p_filename)->c_str();
+    auto fileContent = read_file(p_filename);
+
+    if(!fileContent.has_value())
+    {
+        std::cout << "error reading compute shader at " << p_filename << ": file not found" << std::endl;
+        return;
+    }
+    const char* shaderSource = fileContent->c_str();
 
     if (shaderSource != nullptr)
     {

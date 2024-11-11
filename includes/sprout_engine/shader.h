@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <string>
+#include <optional>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -9,7 +10,7 @@
 #include <fstream>
 #include <sstream>
 
-inline std::string* read_file(const char* filename)
+inline std::optional<std::string> read_file(const char* filename)
 {
 	std::ifstream file(filename, std::ifstream::in);
 	if (file)
@@ -19,10 +20,10 @@ inline std::string* read_file(const char* filename)
 		file.get(s, 0);
 		file.close();
 
-		return new std::string(s.str());
+		return s.str();
 	}
 
-	return nullptr;
+	return {};
 }
 
 class Shader
@@ -35,8 +36,22 @@ public:
 
 	Shader(const char* vert_path, const char* frag_path)
 	{
-		const char* vert_data = read_file(vert_path)->c_str();
-		const char* frag_data = read_file(frag_path)->c_str();
+        auto vertContent = read_file(vert_path);
+        auto fragContent = read_file(frag_path);
+
+        if(!vertContent.has_value())
+        {
+            std::cout << "error reading vertex shader at " << vert_path << ": file not found" << std::endl;
+            return;
+        }
+        const char* vert_data = vertContent->c_str();
+
+        if(!fragContent.has_value())
+        {
+            std::cout << "error reading fragment shader at " << frag_path << ": file not found" << std::endl;
+            return;
+        }
+        const char* frag_data = fragContent->c_str();
 
 		if (vert_data == nullptr)
 		{
