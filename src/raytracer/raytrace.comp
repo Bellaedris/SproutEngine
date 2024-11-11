@@ -36,29 +36,29 @@ struct HitInfo
 struct Material
 {
     vec4 diffuse;
-    vec4 emissive;
+    vec3 emissive;
+    uint matType;
 };
 
 struct Triangle
 {
-    vec4 a;
-    vec4 b;
-    vec4 c;
+    vec3 a;
+    int matIndex;
+    vec3 ab;
+    int padding1;
+    vec3 ac;
+    int padding2;
     vec4 na;
     vec4 nb;
     vec4 nc;
-    int matIndex;
-    int fillA;
-    int fillB;
-    int fillC;
 };
 
 bool intersectTriangle(in Ray r, in Triangle tri, float tmin, float tmax, inout HitInfo hit)
 {
     float epsilon = 0.0001f;
 
-    vec3 edge1 = tri.b.xyz - tri.a.xyz;
-    vec3 edge2 = tri.c.xyz - tri.a.xyz;
+    vec3 edge1 = tri.ab;
+    vec3 edge2 = tri.ac;
     vec3 ray_cross_e2 = cross(r.direction, edge2);
     float det = dot(edge1, ray_cross_e2);
 
@@ -66,7 +66,7 @@ bool intersectTriangle(in Ray r, in Triangle tri, float tmin, float tmax, inout 
     return false;    // This ray is parallel to this triangle.
 
     float inv_det = 1.0 / det;
-    vec3 s = r.origin - tri.a.xyz;
+    vec3 s = r.origin - tri.a;
     float u = inv_det * dot(s, ray_cross_e2);
 
     if (u < 0 || u > 1)

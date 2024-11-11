@@ -12,18 +12,26 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#include <sprout_engine/bounds.h>
+
 struct TriangleData
 {
-    glm::vec4 a;
-    glm::vec4 b;
-    glm::vec4 c;
+    glm::vec3 a;
+    unsigned int materialId;
+    glm::vec3 ab;
+    int padding1;
+    glm::vec3 ac;
+    int padding2;
     glm::vec4 na;
     glm::vec4 nb;
     glm::vec4 nc;
-    unsigned int materialId;
-    unsigned int fillA;
-    unsigned int fillB;
-    unsigned int fillC;
+
+    BoundingBox bounds() const {
+        return {
+            glm::min(glm::min(a + ab, a + ac), a),
+            glm::max(glm::max(a + ab, a + ac), a),
+        };
+    }
 };
 
 struct DirLightData
@@ -37,7 +45,8 @@ struct DirLightData
 struct MaterialData
 {
     glm::vec4 diffuse;
-    glm::vec4 emissive;
+    glm::vec3 emissive;
+    unsigned int matType;
 };
 
 class GpuMesh

@@ -47,18 +47,23 @@ void GpuMesh::processMesh(const aiMesh *mesh, const aiScene *scene)
         const auto va = mesh->mVertices[mesh->mFaces[i].mIndices[0]];
         const auto vb = mesh->mVertices[mesh->mFaces[i].mIndices[1]];
         const auto vc = mesh->mVertices[mesh->mFaces[i].mIndices[2]];
+        const auto ab = (vb - va);
+        const auto ac = (vc - va);
         const auto na = mesh->mNormals[mesh->mFaces[i].mIndices[0]];
         const auto nb = mesh->mNormals[mesh->mFaces[i].mIndices[1]];
         const auto nc = mesh->mNormals[mesh->mFaces[i].mIndices[2]];
         m_triangles.push_back
         ({
-                 {va.x, va.y, va.z, 1.f},
-                 {vb.x, vb.y, vb.z, 1.f},
-                 {vc.x, vc.y, vc.z, 1.f},
+                 {va.x, va.y, va.z},
+                 mesh->mMaterialIndex,
+                 {ab.x, ab.y, ab.z},
+                 0,
+                 {ac.x, ac.y, ac.z},
+                 0,
                  {na.x, na.y, na.z, 1.f},
                  {nb.x, nb.y, nb.z, 1.f},
                  {nc.x, nc.y, nc.z, 1.f},
-                 mesh->mMaterialIndex, 0, 0, 0
+
         });
     }
 }
@@ -82,7 +87,8 @@ void GpuMesh::processMaterials(const aiScene *scene)
         m_materials.push_back
         ({
             diffuse,
-            emissive
+            glm::vec3(emissive),
+            0
         });
     }
 }
