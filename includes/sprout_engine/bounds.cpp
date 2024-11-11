@@ -83,7 +83,7 @@ BoundingBox::BoundingBox(const BoundingBox& p_lhs, const BoundingBox& p_rhs)
 
 glm::vec3 BoundingBox::getCenter() const
 {
-    return (m_pmin + m_pmax) * 0.5f;
+    return m_center;
 }
 
 BoundingBox BoundingBox::empty()
@@ -217,4 +217,11 @@ void BoundingBox::draw(Shader& s)
     glBindVertexArray(vao);
     glDrawArrays(GL_LINES, 0, 24);
     glBindVertexArray(0);
+}
+
+BoundingBox &BoundingBox::Include(const BoundingBox &other)
+{
+    m_pmin = glm::min(m_pmin, other.m_pmin);
+    m_pmax = glm::max(m_pmax, other.m_pmax);
+    return *this;
 }

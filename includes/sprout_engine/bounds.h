@@ -35,6 +35,7 @@ private:
 	unsigned int vao;
 	glm::vec3 color;
 	bool m_isInitialized{};
+    glm::vec3 m_center;
 
 public:
 	glm::vec3 m_pmin{};
@@ -42,9 +43,11 @@ public:
 
     BoundingBox() = default;
     BoundingBox(const glm::vec3& pmin, const glm::vec3& pmax, const glm::vec3& color = glm::vec3(1.f, 1.f, 1.f))
-        : m_pmin(pmin), m_pmax(pmax), color(color) {}
+        : m_pmin(pmin), m_pmax(pmax), color(color), m_center((pmin + pmax) * 0.5f) {}
 
     BoundingBox(const BoundingBox& p_lhs, const BoundingBox& p_rhs);
+
+    BoundingBox& Include(const BoundingBox& other);
 
     glm::vec3 getCenter() const;
 

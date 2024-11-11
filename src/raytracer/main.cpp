@@ -70,7 +70,7 @@ public:
         m_shader = Shader("texture.vs", "texture.fs");
         m_debugShader = Shader("default.vs", "default.fs");
         m_AABBDisplay = Shader("debug_lines.vs", "debug_lines.fs");
-        m_compute = ComputeShader("raytrace.cs");
+        m_compute = ComputeShader("raytrace.comp");
 
         //add traceable objects
         m_traceables.setCamera(mainCamera);
@@ -140,6 +140,13 @@ public:
 
         glViewport(0, 0, width(), height());
         glClearColor(.1f, .1f, .1f, 1.f);
+
+        //just a BVH construction test
+        GpuMesh sponza(resources_path + "models/Sponza/sponza.obj");
+        BVH bvh;
+        bvh.build(sponza.GetTriangleData());
+        std::cout << "height: " << bvh.height() << std::endl;
+
         return 0;
     }
 
@@ -212,7 +219,7 @@ public:
             {
                 m_sphericalCoordsTexture = Texture(width(), height(), generateDirections());
                 glBindImageTexture(1, m_sphericalCoordsTexture.get_id(), 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-                m_compute = ComputeShader("raytrace.cs");
+                m_compute = ComputeShader("raytrace.comp");
             }
         }
         if(ImGui::CollapsingHeader("Raytrace CPU", true))

@@ -2,13 +2,14 @@
 // Created by arpradier on 23/09/2024.
 //
 
-
 #pragma once
+
 #include <vector>
 
 #include "traceableManager.h"
 #include "Traceables/box.h"
 #include "Traceables/traceable.h"
+#include "gpuMeshReader.h"
 
 class BVHNode : public Traceable
 {
@@ -32,3 +33,35 @@ private:
 
     void sortOnAxis(std::vector<Traceable*>& p_traceables, size_t p_begin, size_t p_end, int axis);
 };
+
+struct Node
+{
+    glm::vec3 pmin;
+    int left;
+    glm::vec3 pmax;
+    int right;
+
+    [[nodiscard]] bool isLeaf() const {return left < 0;}
+    [[nodiscard]] bool isInternal() const {return left > 0;}
+
+};
+
+class BVH
+{
+public:
+    void build(std::vector<TriangleData> triangles);
+    void intersect(const Ray& r, HitInfo& hit);
+    int height();
+protected:
+    void precomputeBounds();
+    void build(int index, int start, int end);
+    BoundingBox nodeBounds(int start, int end) const;
+    void sortOnAxis(size_t p_begin, size_t p_end, int axis);
+    int height(int index);
+
+    std::vector<Node> m_nodes;
+    std::vector<TriangleData> m_triangles;
+    std::vector<BoundingBox> m_bounds;
+    int numberOfNodes;
+};
+
