@@ -48,8 +48,10 @@ In progress:
 Raytracing on both CPU and GPU. Implemented on the GPU side:
 - Direct illumination and shadows on spheres
 - Movement though the scene (No way, realtime???)
+- Diffuse lighting with materials, emissive triangles and frame accumulation
 
 ![](resources/readme/GPU%20sphere.webp)
+![](resources/readme/diffuse%20render.jpg)
 
 On the CPU side:
 - Light bounces, with different material types (lambertians, dielectrics, mettalic)
