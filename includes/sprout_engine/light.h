@@ -68,6 +68,7 @@ public:
     };
 
     void set_direction(float* dir) { direction = vec4(dir[0], dir[1], dir[2], 1.f); };
+    void set_direction(vec3 dir) { direction = vec4(dir, 1.f); };
 
     void setName(int index) { name = std::string("Directional light") + std::to_string(index); }
 

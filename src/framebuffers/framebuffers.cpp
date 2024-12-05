@@ -22,10 +22,10 @@ public:
 
     int init() override
     {
-        mainCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
-        setActiveCamera(&mainCamera);
+        playerCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
+        setActiveCamera(&playerCamera);
 
-        m_entities.emplace_back(resources_path + "models/Sponza/sponza.obj", false);
+        m_entities.emplace_back(resources_path + "models/Sponza/sponza.obj", "Sponza", false);
        //m = Model(resources_path + "models/cube.obj", true);
 
         s = Shader("default.vs", "default.fs");
@@ -33,9 +33,10 @@ public:
         s_shadowmap = Shader("shadowmapping.vs", "shadowmapping.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
 
-        shadowMapCamera = Camera(glm::vec3(0.f, 0.f, 6.f), glm::vec3(0.f, 1.f, 0.f), -90.f, 0.f, 0.1f, 1000.f, fov, 16.f / 9.f);
+        shadowMapCamera = Camera(glm::vec3(0.f, 100.f, 0.f), glm::vec3(0.f, 1.f, 0.f), -90.f, 0.f, 0.1f, 1000.f, fov, 16.f / 9.f);
 
-        light = DirectionalLight(glm::vec3(0.f, -1.f, 1.f), glm::vec3(.1, .1, .1), glm::vec3(1., 1., 1.), glm::vec3(.9, .9, .9));
+        auto shadowCamDir = shadowMapCamera.getDir();
+        light = DirectionalLight({shadowCamDir.x, shadowCamDir.y, shadowCamDir.z, 1.f}, glm::vec4(.1, .1, .1, 1.), glm::vec4(1., 1., 1., 1.), glm::vec4(.9f, .9f, .9f, 1.f));
 
         // post-processing framebuffer/texture
         glGenFramebuffers(1, &fbo);
@@ -51,7 +52,7 @@ public:
         glGenFramebuffers(1, &light_fb);
         glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
 
-        light_fb_depth = Texture(1366, 768, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, "texture_diffuse", GL_CLAMP_TO_BORDER);
+        light_fb_depth = Texture(1366, 768, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, "texture_diffuse", GL_CLAMP_TO_BORDER);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
@@ -72,15 +73,15 @@ public:
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-        std::array<std::string, 6> cubemap = {
-                resources_path + "textures/skyboxes/Daylight Box_Right.bmp",
-                resources_path + "textures/skyboxes/Daylight Box_Left.bmp",
-                resources_path + "textures/skyboxes/Daylight Box_Bottom.bmp",
-                resources_path + "textures/skyboxes/Daylight Box_Top.bmp",
-                resources_path + "textures/skyboxes/Daylight Box_Front.bmp",
-                resources_path + "textures/skyboxes/Daylight Box_Back.bmp",
-        };
-        m_skybox = Skybox(cubemap);
+        // std::array<std::string, 6> cubemap = {
+        //         resources_path + "textures/skyboxes/Daylight Box_Right.bmp",
+        //         resources_path + "textures/skyboxes/Daylight Box_Left.bmp",
+        //         resources_path + "textures/skyboxes/Daylight Box_Bottom.bmp",
+        //         resources_path + "textures/skyboxes/Daylight Box_Top.bmp",
+        //         resources_path + "textures/skyboxes/Daylight Box_Front.bmp",
+        //         resources_path + "textures/skyboxes/Daylight Box_Back.bmp",
+        // };
+        // m_skybox = Skybox(cubemap);
 
         glEnable(GL_DEPTH_TEST);
 
@@ -100,7 +101,8 @@ public:
             ImGui::NewFrame();
             ImGui::Begin("Inspector");
             // mainCamera inspector
-            mainCamera.drawInspector();
+            playerCamera.drawInspector();
+            shadowMapCamera.drawInspector();
             for (auto &entity: m_entities) {
                 entity.drawInspector();
             }
@@ -125,7 +127,7 @@ public:
                 ImGui::InputFloat("Orthographic zoom", &shadowMapOrthoSize);
                 if (ImGui::Button("Update")) {
                     glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
-                    light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT,
+                    light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT,
                                              "depthMap", GL_REPEAT, GL_NEAREST);
                     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
                 }
@@ -135,12 +137,11 @@ public:
                 ImGui::Checkbox("Show AABB", &show_aabb);
                 ImGui::Checkbox("Show before post process", &noPostProcess);
                 ImGui::Checkbox("Draw skybox", &drawSkybox);
-                ImGui::Checkbox("Shadow depth mode", &shadowDepthMode);
                 if (ImGui::Checkbox("useLightCamera", &controlLightCamera)) {
                     if (controlLightCamera)
                         setActiveCamera(&shadowMapCamera);
                     else
-                        setActiveCamera(&mainCamera);
+                        setActiveCamera(&playerCamera);
                 }
                 ImGui::InputFloat("FoV value", &fov, 1.f);
                 ImGui::InputFloat("Aspect ratio w", &w, 1.f);
@@ -151,7 +152,8 @@ public:
                 ImGui::ColorEdit3("light color diffuse", diffuse);
                 ImGui::ColorEdit3("light color specular", specular);
                 if (ImGui::Button("update light")) {
-                    light.set_direction(lightDir);
+                    //light.set_direction(lightDir);
+                    light.set_direction(shadowMapCamera.getDir());
                     light.set_colors(ambiant, diffuse, specular);
                 }
                 if (ImGui::Button("reload shader")) {
@@ -174,13 +176,11 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 light_view = shadowMapCamera.view();
-
         glm::mat4 light_projection = glm::ortho(-shadowMapOrthoSize, shadowMapOrthoSize, -shadowMapOrthoSize, shadowMapOrthoSize, .1f, 1000.f); // glm::perspective(glm::radians(fov), w / h, .1f, 100.f);
 
         for(auto& entity : m_entities)
         {
             s_shadowmap.use();
-
             s_shadowmap.uniform_data("mvpMatrix", light_projection * light_view * entity.getTransform().getModelMatrix());
 
             entity.draw(s_shadowmap);
@@ -192,50 +192,44 @@ public:
         glClearColor(.1f, .1f, .1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 view = cam->view();
-
-        glm::mat4 projection = cam->projection();
-
-        glm::mat4 viewMatrix, projectionMatrix; // = projection * view * model;
-        glm::mat4 inverseViewMatrix, normalMatrix, lightspaceMatrix, model;
+        glm::mat4 view = mainCamera->view();
+        glm::mat4 projection;
+        if(controlLightCamera)
+            projection = light_projection;
+        else
+            projection = mainCamera->projection();
 
         s.use();
         light.send_to_shader(s, 0);
 
         for(auto& entity : m_entities) {
-            model = entity.getTransform().getModelMatrix();
-            viewMatrix = cam->view();
-            projectionMatrix = cam->projection();
-            lightspaceMatrix = light_projection * light_view * model;
+            glm::mat4 model = entity.getTransform().getModelMatrix();
+            glm::mat4 lightspaceMatrix = light_projection * light_view * model;
 
-            normalMatrix = glm::transpose(glm::inverse(model));
-            inverseViewMatrix = glm::inverse(view);
+            glm::mat4 normalMatrix = glm::transpose(glm::inverse(model));
+            glm::mat4 inverseViewMatrix = glm::inverse(view);
             s.uniform_data("modelMatrix", model);
             s.uniform_data("normalMatrix", normalMatrix);
-            s.uniform_data("viewMatrix", viewMatrix);
-            s.uniform_data("projectionMatrix", projectionMatrix);
+            s.uniform_data("viewMatrix", view);
+            s.uniform_data("projectionMatrix", projection);
             s.uniform_data("inverseViewMatrix", inverseViewMatrix);
             s.uniform_data("lightspaceMatrix", lightspaceMatrix);
-            if(shadowDepthMode)
-                s.uniform_data("drawDepth", 1);
-            else
-                s.uniform_data("drawDepth", 0);
 
             s.uniform_data("shadowmap", 2);
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
-            entity.draw(s, cam->getFrustum(), entity.getTransform());
+            entity.draw(s, playerCamera.getFrustum(), entity.getTransform());
         }
 
-        if (drawSkybox) {
-            glDepthFunc(GL_LEQUAL);
-            s_skybox.use();
-            glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
-            s_skybox.uniform_data("viewMatrix", skyboxView);
-            s_skybox.uniform_data("projectionMatrix", projection);
-
-            m_skybox.draw(s_skybox);
-        }
+        //if (drawSkybox) {
+        //    glDepthFunc(GL_LEQUAL);
+        //    s_skybox.use();
+        //    glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
+        //    s_skybox.uniform_data("viewMatrix", skyboxView);
+        //    s_skybox.uniform_data("projectionMatrix", projection);
+//
+        //    m_skybox.draw(s_skybox);
+        //}
 
         if (noPostProcess)
         {
@@ -289,7 +283,7 @@ protected:
     std::vector<Entity> m_entities;
     Model m;
     Shader s, s_post_process, s_shadowmap, s_skybox;
-    Camera mainCamera;
+    Camera playerCamera;
     Camera shadowMapCamera;
     DirectionalLight light;
     Skybox m_skybox;
@@ -325,7 +319,6 @@ protected:
     bool show_aabb = false;
     bool noPostProcess = false;
     bool drawSkybox = false;
-    bool shadowDepthMode = false;
     bool controlLightCamera = false;
 
     float quadVertices[24] = {
