@@ -40,12 +40,12 @@ struct Frustum
 	Plane nearFace;
 };
 
-const float CAMERA_SPEED = 5.f;
 const float CAMERA_SENSITIVITY = .1f;
 
 class Camera : public Inspectable, public ICamera
 {
 protected:
+	int currentId;
 	glm::vec3 pos;
     glm::vec3 dir;
 	glm::vec3 up;
@@ -60,6 +60,8 @@ protected:
 	float pitch;
 	float yaw;
 
+	float speed = 5.f;
+
     glm::mat4 m_view{};
     glm::mat4 m_projection{};
 
@@ -68,6 +70,8 @@ protected:
 	void update_dir();
 
 public:
+	static int instancedCameras;
+
 	Camera();
 	Camera(const glm::vec3 &pos, const glm::vec3 &up, float pitch, float yaw, float p_znear, float p_zfar, float p_fov, float p_aspectRatio);
 

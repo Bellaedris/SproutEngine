@@ -5,6 +5,8 @@
 #include "camera.h"
 #include "imgui/imgui.h"
 
+int Camera::instancedCameras = 0;
+
 void Camera::update_dir() {
     vec3 new_dir;
     float yawRad = radians(yaw);
@@ -23,6 +25,7 @@ void Camera::update_dir() {
 Camera::Camera()
         : dir(vec3(0., 0., -1.)), pitch(0.), yaw(0.)
 {
+    currentId = instancedCameras++;
     pos = vec3(0., 0., 0.);
     worldUp = vec3(0., 1., 0.);
 
@@ -33,6 +36,7 @@ Camera::Camera(const vec3 &pos, const vec3 &up, float pitch, float yaw, float p_
                float p_aspectRatio)
         : dir(vec3(0., 0., -1.)), pos(pos), worldUp(up), up(up), pitch(pitch), yaw(yaw), m_zNear(p_znear), m_zFar(p_zfar), m_fov(p_fov), m_aspectRatio(p_aspectRatio)
 {
+    currentId = instancedCameras++;
     right = normalize(cross(dir, up));
     update_dir();
 
@@ -106,7 +110,7 @@ void Camera::updateFrustum() {
 }
 
 void Camera::process_input(CAMERA_DIR direction, float delta_time) {
-    float velocity = CAMERA_SPEED * delta_time;
+    float velocity = speed * delta_time;
     switch (direction)
     {
         case FORWARD:
@@ -166,7 +170,7 @@ glm::vec3 Camera::getRight() const
 }
 
 void Camera::drawInspector() {
-    if(ImGui::TreeNode("Camera"))
+    if(ImGui::TreeNode(std::string("Camera" + std::to_string(currentId)).c_str()))
     {
         if(ImGui::InputFloat3("Position", glm::value_ptr(pos)))
         {
@@ -184,6 +188,7 @@ void Camera::drawInspector() {
         {
             updateProjection();
         }
+        ImGui::InputFloat("Speed", &speed);
         ImGui::TreePop();
     }
 }
