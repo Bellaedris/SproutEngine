@@ -12,31 +12,30 @@ uniform sampler2D diffuse_texture1;
 uniform sampler2D specular_texture1;
 
 uniform sampler2D shadowmap;
-uniform int drawDepth;
 
 struct DirectionalLight
 {
-	vec3 direction;
+	vec4 direction;
 
-	vec3 ambiant;
-	vec3 diffuse;
-	vec3 specular;
+	vec4 ambiant;
+	vec4 diffuse;
+	vec4 specular;
 };
 uniform DirectionalLight dirLights[10];
 
 vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, vec3 color, float shadow)
 {
 	// diffuse
-	vec3 lightDir = normalize(-light.direction);
+	vec3 lightDir = normalize(-light.direction.xyz);
 	float diff = max(dot(lightDir, normal), 0.f);
 
 	//specular
 	vec3 reflect_dir = reflect(-lightDir, normal);
 	float spec = pow(max(dot(reflect_dir, viewDir), 0.), 32.);
 
-	vec3 ambiant = light.ambiant;
-	vec3 diffuse = light.diffuse * diff;
-	vec3 specular = vec3(texture(specular_texture1, texCoord)) * spec * light.specular;
+	vec3 ambiant = light.ambiant.xyz;
+	vec3 diffuse = light.diffuse.xyz * diff;
+	vec3 specular = vec3(texture(specular_texture1, texCoord)) * spec * light.specular.xyz;
 
 	return (ambiant + (1.0 - shadow) * (diffuse + specular)) * color;
 }
@@ -114,7 +113,7 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir, vec3 color)
 
 float computeShadow(vec4 lightspace_pos)
 {
-	//gl_Position does this automatically but not our out param
+	//gl_Position does perspective division automatically but not our out param
 	vec3 projCoord = lightspace_pos.xyz / lightspace_pos.w;
 
 	projCoord = projCoord * 0.5 + 0.5; // from [-1;1] to [0;1]
@@ -129,29 +128,16 @@ float computeShadow(vec4 lightspace_pos)
 
 void main()
 {
-	if (drawDepth == 1)
-	{
-		//gl_Position does this automatically but not our out param
-		vec3 projCoord = lightspacePos.xyz / lightspacePos.w;
+	vec3 color = texture(diffuse_texture1, texCoord).xyz;
 
-		projCoord = projCoord * .5 + .5;// from [-1;1] to [0;1]
+	vec3 normal = normalize(norm);
+	vec3 viewDir = normalize(cameraPos.xyz - position.xyz);
 
-		float depth = texture(shadowmap, projCoord.xy).r;
-		FragColor = vec4(vec3(depth), 1.f);
-	}
-	else
-	{
-		vec3 color = texture(diffuse_texture1, texCoord).xyz;
+	float shadow = computeShadow(lightspacePos);
 
-		vec3 normal = normalize(norm);
-		vec3 viewDir = normalize(cameraPos.xyz - position.xyz);
+	vec3 finalColor = calculateDirectionalLight(dirLights[0], normal, viewDir, color, shadow);
+	//finalColor += calculatePointLight(PointLight[0], normal, viewDir, color);
+	//finalcolor += calculateSpotLight(SpotLight[0], normal, viewDir, color);
 
-		float shadow = computeShadow(lightspacePos);
-
-		vec3 finalColor = calculateDirectionalLight(dirLights[0], normal, viewDir, color, shadow);
-		//finalColor += calculatePointLight(PointLight[0], normal, viewDir, color);
-		//finalcolor += calculateSpotLight(SpotLight[0], normal, viewDir, color);
-
-		FragColor = vec4(finalColor, 1.f);
-	}
+	FragColor = vec4(finalColor, 1.f);
 }
