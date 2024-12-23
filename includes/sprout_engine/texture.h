@@ -18,7 +18,11 @@ public:
 	std::string type;
 	std::string path;
 
-	Texture() : id(-1) {}
+	Texture()
+    {
+        glGenTextures(1, &id);
+    }
+
 	Texture(const char* path, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR) : type(type), path(path)
 	{
 		int width, height, nbChan;
@@ -173,6 +177,24 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA,
 		             GL_FLOAT, NULL);
 	}
+
+    static Texture buildDepthTexture(int width, int height)
+    {
+        Texture t;
+        glBindTexture(GL_TEXTURE_2D, t.get_id());
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+        return t;
+    }
 
 	inline unsigned int get_id() const { return id; };
 

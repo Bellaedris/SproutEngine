@@ -9,8 +9,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <irrklang/irrKlang.h>
-
 #include <vector>
 
 std::string resources_path = "../../resources/";
@@ -45,14 +43,14 @@ public:
         fbo_texture = Texture(1366, 768, GL_RGB, GL_RGB);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_texture.get_id(), 0);
 
-        fbo_depth = Texture(1366, 768, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT);
+        fbo_depth = Texture::buildDepthTexture(1366, 768);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth.get_id(), 0);
 
         // shadow mapping framebuffer/texture
         glGenFramebuffers(1, &light_fb);
         glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
 
-        light_fb_depth = Texture(1366, 768, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, "texture_diffuse", GL_CLAMP_TO_BORDER);
+        light_fb_depth = Texture::buildDepthTexture(1366, 768);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
@@ -127,8 +125,7 @@ public:
                 ImGui::InputFloat("Orthographic zoom", &shadowMapOrthoSize);
                 if (ImGui::Button("Update")) {
                     glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
-                    light_fb_depth = Texture(shadowmapRes[0], shadowmapRes[1], GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT,
-                                             "depthMap", GL_REPEAT, GL_NEAREST);
+                    light_fb_depth = Texture::buildDepthTexture(shadowmapRes[0], shadowmapRes[1]);
                     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
                 }
             }
