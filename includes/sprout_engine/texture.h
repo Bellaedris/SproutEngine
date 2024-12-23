@@ -48,9 +48,13 @@ public:
 			break;
 		}
 
+        GLenum internalFormat = GL_RGB;
+        if(type == "texture_diffuse")
+            internalFormat = GL_SRGB;
+
 		if (data)
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+			glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 			glGenerateMipmap(GL_TEXTURE_2D);
 			std::cout << "loaded texture " << path << std::endl;
 		}

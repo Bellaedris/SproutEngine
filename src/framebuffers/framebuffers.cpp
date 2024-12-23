@@ -143,6 +143,7 @@ public:
                 ImGui::InputFloat("FoV value", &fov, 1.f);
                 ImGui::InputFloat("Aspect ratio w", &w, 1.f);
                 ImGui::InputFloat("Aspect ratio h", &h, 1.f);
+                ImGui::InputFloat("Gamma correction", &gamma, 0.1f);
                 ImGui::InputFloat3("Position of the object", objectPos);
                 ImGui::InputFloat3("Direction of the light", lightDir);
                 ImGui::ColorEdit3("light color ambiant", ambiant);
@@ -197,6 +198,8 @@ public:
             projection = mainCamera->projection();
 
         s.use();
+        s.uniform_data("gamma", gamma);
+        s.uniform_data("shadowmap", 2);
         light.send_to_shader(s, 0);
 
         for(auto& entity : m_entities) {
@@ -212,7 +215,6 @@ public:
             s.uniform_data("inverseViewMatrix", inverseViewMatrix);
             s.uniform_data("lightspaceMatrix", lightspaceMatrix);
 
-            s.uniform_data("shadowmap", 2);
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
             entity.draw(s, playerCamera.getFrustum(), entity.getTransform());
@@ -310,6 +312,7 @@ protected:
     float w = 16.f;
     float h = 9.f;
     float rotation = 0.f;
+    float gamma = 2.2f;
     float last_frame_time_cpu;
     float last_frame_time_gpu;
     bool wireframe_mode = false;

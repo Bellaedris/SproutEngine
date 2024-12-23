@@ -30,8 +30,8 @@ vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir
 	float diff = max(dot(lightDir, normal), 0.f);
 
 	//specular
-	vec3 reflect_dir = reflect(-lightDir, normal);
-	float spec = pow(max(dot(reflect_dir, viewDir), 0.), 32.);
+	vec3 halfwayDir = (lightDir + viewDir) / length(lightDir + viewDir);
+	float spec = pow(max(dot(halfwayDir, normal), 0.), 32.);
 
 	vec3 ambiant = light.ambiant.xyz;
 	vec3 diffuse = light.diffuse.xyz * diff;
@@ -119,12 +119,14 @@ float computeShadow(vec4 lightspace_pos)
 	projCoord = projCoord * 0.5 + 0.5; // from [-1;1] to [0;1]
 
 	if (projCoord.z > 1.f)
-		return 1.f;
+	return 1.f;
 
 	float bias = 0.005;
 	// in the shadow if current pixel is in front of shadowmap
 	return projCoord.z > texture(shadowmap, projCoord.xy).r + bias ? .9f : 0.f;
 }
+
+uniform float gamma;
 
 void main()
 {
@@ -139,5 +141,5 @@ void main()
 	//finalColor += calculatePointLight(PointLight[0], normal, viewDir, color);
 	//finalcolor += calculateSpotLight(SpotLight[0], normal, viewDir, color);
 
-	FragColor = vec4(finalColor, 1.f);
+	FragColor = vec4(pow(finalColor, vec3(1.f / gamma)), 1.f);
 }
