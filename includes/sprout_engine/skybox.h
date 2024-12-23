@@ -15,10 +15,8 @@ class Skybox
 {
 public:
     Skybox() : m_vao(-1), m_vertexBuffer(-1) {};
-
-    Skybox(const std::string path);;
-
-    Skybox(const std::array<std::string, 6>& paths);;
+    Skybox(const std::string path);
+    Skybox(const std::array<std::string, 6>& paths);
 
     void initBuffers();
 

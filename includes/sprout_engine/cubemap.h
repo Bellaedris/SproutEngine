@@ -53,7 +53,6 @@ public:
     Cubemap(std::array<std::string, 6> faces)
     {
         int width, height, nbChan;
-        stbi_set_flip_vertically_on_load(true);
 
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);
@@ -91,7 +90,6 @@ public:
 
     void bind()
     {
-        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);
     }
 };

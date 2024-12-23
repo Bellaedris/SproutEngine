@@ -71,15 +71,15 @@ public:
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-        // std::array<std::string, 6> cubemap = {
-        //         resources_path + "textures/skyboxes/Daylight Box_Right.bmp",
-        //         resources_path + "textures/skyboxes/Daylight Box_Left.bmp",
-        //         resources_path + "textures/skyboxes/Daylight Box_Bottom.bmp",
-        //         resources_path + "textures/skyboxes/Daylight Box_Top.bmp",
-        //         resources_path + "textures/skyboxes/Daylight Box_Front.bmp",
-        //         resources_path + "textures/skyboxes/Daylight Box_Back.bmp",
-        // };
-        // m_skybox = Skybox(cubemap);
+         std::array<std::string, 6> cubemap = {
+                 resources_path + "textures/skybox/right.jpg",
+                 resources_path + "textures/skybox/left.jpg",
+                 resources_path + "textures/skybox/bottom.jpg",
+                 resources_path + "textures/skybox/top.jpg",
+                 resources_path + "textures/skybox/front.jpg",
+                 resources_path + "textures/skybox/back.jpg",
+         };
+         m_skybox = Skybox(cubemap);
 
         glEnable(GL_DEPTH_TEST);
 
@@ -218,15 +218,15 @@ public:
             entity.draw(s, playerCamera.getFrustum(), entity.getTransform());
         }
 
-        //if (drawSkybox) {
-        //    glDepthFunc(GL_LEQUAL);
-        //    s_skybox.use();
-        //    glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
-        //    s_skybox.uniform_data("viewMatrix", skyboxView);
-        //    s_skybox.uniform_data("projectionMatrix", projection);
-//
-        //    m_skybox.draw(s_skybox);
-        //}
+        if (drawSkybox) {
+            glDepthFunc(GL_LEQUAL);
+            s_skybox.use();
+            glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
+            s_skybox.uniform_data("viewMatrix", skyboxView);
+            s_skybox.uniform_data("projectionMatrix", projection);
+
+            m_skybox.draw(s_skybox);
+        }
 
         if (noPostProcess)
         {
@@ -315,7 +315,7 @@ protected:
     bool wireframe_mode = false;
     bool show_aabb = false;
     bool noPostProcess = false;
-    bool drawSkybox = false;
+    bool drawSkybox = true;
     bool controlLightCamera = false;
 
     float quadVertices[24] = {
