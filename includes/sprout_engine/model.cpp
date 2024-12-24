@@ -63,11 +63,13 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
         else
         {
             std::vector<Texture> diffuse_maps = loadMaterialTexture(mat, aiTextureType_DIFFUSE, "texture_diffuse");
+            std::vector<Texture> normal_maps = loadMaterialTexture(mat, aiTextureType_NORMALS, "texture_normals");
             std::vector<Texture> specular_maps = loadMaterialTexture(mat, aiTextureType_SPECULAR, "texture_specular");
             std::vector<Texture> emissive_maps = loadMaterialTexture(mat, aiTextureType_EMISSIVE, "texture_emissive");
 
             textures.insert(textures.end(), diffuse_maps.begin(), diffuse_maps.end());
             textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
+            textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
         }
 
     }

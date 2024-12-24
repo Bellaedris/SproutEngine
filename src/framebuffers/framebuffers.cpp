@@ -23,7 +23,7 @@ public:
         playerCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
         setActiveCamera(&playerCamera);
 
-        m_entities.emplace_back(resources_path + "models/Sponza/sponza.obj", "Sponza", false);
+        m_entities.emplace_back(resources_path + "models/DamagedHelmet/DamagedHelmet.gltf", "helmet", false);
        //m = Model(resources_path + "models/cube.obj", true);
 
         s = Shader("default.vs", "default.fs");

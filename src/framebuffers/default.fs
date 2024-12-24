@@ -7,9 +7,11 @@ in vec4 position;
 in vec2 texCoord;
 in vec4 cameraPos;
 in vec4 lightspacePos;
+in mat3 TBN;
 
-uniform sampler2D diffuse_texture1;
-uniform sampler2D specular_texture1;
+uniform sampler2D texture_diffuse;
+uniform sampler2D texture_specular;
+uniform sampler2D texture_normals;
 
 uniform sampler2D shadowmap;
 
@@ -35,7 +37,7 @@ vec3 calculateDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir
 
 	vec3 ambiant = light.ambiant.xyz;
 	vec3 diffuse = light.diffuse.xyz * diff;
-	vec3 specular = vec3(texture(specular_texture1, texCoord)) * spec * light.specular.xyz;
+	vec3 specular = vec3(texture(texture_specular, texCoord)) * spec * light.specular.xyz;
 
 	return (ambiant + (1.0 - shadow) * (diffuse + specular)) * color;
 }
@@ -66,7 +68,7 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 viewDir, vec3 color
 
 	vec3 ambiant = light.ambiant * color;
 	vec3 diffuse = light.diffuse * diff * color;
-	vec3 specular = vec3(texture(specular_texture1, texCoord)) * spec * light.specular;
+	vec3 specular = vec3(texture(texture_specular, texCoord)) * spec * light.specular;
 
 	float dist = length(light.position - position.xyz);
 	float attenuation = 1.f / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
@@ -101,7 +103,7 @@ vec3 calculateSpotLight(SpotLight light, vec3 normal, vec3 viewDir, vec3 color)
 
 		vec3 ambiant = light.ambiant * color;
 		vec3 diffuse = light.diffuse * diff * color;
-		vec3 specular = vec3(texture(specular_texture1, texCoord)) * spec * light.specular;
+		vec3 specular = vec3(texture(texture_specular, texCoord)) * spec * light.specular;
 
 		return (ambiant + diffuse + specular);
 	}
@@ -130,9 +132,12 @@ uniform float gamma;
 
 void main()
 {
-	vec3 color = texture(diffuse_texture1, texCoord).xyz;
+	vec3 color = texture(texture_diffuse, texCoord).xyz;
 
-	vec3 normal = normalize(norm);
+	vec3 normal = texture(texture_normals, texCoord).xyz;
+	normal = normal * 2.f - 1.f;
+	normal = normalize(TBN * normal);
+
 	vec3 viewDir = normalize(cameraPos.xyz - position.xyz);
 
 	float shadow = computeShadow(lightspacePos);

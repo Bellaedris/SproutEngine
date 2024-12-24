@@ -18,6 +18,8 @@ protected:
 	std::vector<glm::vec3> m_normals;
     std::vector<glm::vec4> m_colors;
 	std::vector<glm::vec2> m_texcoords;
+    std::vector<glm::vec3> m_tangents;
+    std::vector<glm::vec3> m_bitangents;
 	std::vector<unsigned int> m_indices;
 	std::vector<Texture> m_textures;
     Material m_material;
@@ -30,6 +32,14 @@ protected:
 
 	bool update_data;
 
+    void computeBitengants();
+
+    /**
+	 * \brief Builds the buffer containing the mesh data. Since data will have to go from CPU to GPU,
+	 * it may be ineficient and will require a refactor, for instance using glBufferStorage...
+	 */
+    void build_buffer();
+
 public:
 	Mesh() : update_data(false)
 	{
@@ -38,7 +48,7 @@ public:
 		glGenBuffers(1, &index_buffer);
 	};
 
-	// read a Mesh from file
+// read a Mesh from file
 	Mesh(
             const std::vector<glm::vec3> &vertices,
             const std::vector<glm::vec3>& normals,
@@ -56,6 +66,7 @@ public:
 		glGenBuffers(1, &buffer);
 		glGenBuffers(1, &index_buffer);
 
+        computeBitengants();
 		build_buffer();
 
 		//init AABB
@@ -91,6 +102,8 @@ public:
 
     inline size_t vertex_buffer_size() const { return m_positions.size() * sizeof(vec3); };
     inline size_t normal_buffer_size() const { return m_normals.size() * sizeof(vec3); };
+    inline size_t tangent_buffer_size() const { return m_tangents.size() * sizeof(vec3); };
+    inline size_t bitangent_buffer_size() const { return m_bitangents.size() * sizeof(vec3); };
     inline size_t color_buffer_size() const { return m_colors.size() * sizeof(vec4); };
     inline size_t texcoords_buffer_size() const { return m_texcoords.size() * sizeof(vec2); };
     inline size_t indices_buffer_size() const { return m_indices.size() * sizeof(unsigned int); };
@@ -141,49 +154,6 @@ public:
 		m_indices.push_back(c);
 	}
 
-	/**
-	 * \brief Builds the buffer containing the mesh data. Since data will have to go from CPU to GPU,
-	 * it may be ineficient and will require a refactor, for instance using glBufferStorage...
-	 */
-	void build_buffer()
-	{
-		glBindVertexArray(vao);
-
-		// buffer containing all vertices data
-		glBindBuffer(GL_ARRAY_BUFFER, buffer);
-		size_t size = vertex_buffer_size() + normal_buffer_size() + m_texcoords.size() * sizeof(vec2);
-		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
-
-		//positions subdata
-		size_t offset = 0;
-		size = vertex_buffer_size();
-		glBufferSubData(GL_ARRAY_BUFFER, offset, size, m_positions.data());
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)offset);
-		glEnableVertexAttribArray(0);
-
-		//normals 
-		offset += size;
-		size = normal_buffer_size();
-		glBufferSubData(GL_ARRAY_BUFFER, offset, size, m_normals.data());
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)offset);
-		glEnableVertexAttribArray(1);
-
-		//uvs
-		offset += size;
-		size = texcoords_buffer_size();
-		glBufferSubData(GL_ARRAY_BUFFER, offset, size, m_texcoords.data());
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)offset);
-		glEnableVertexAttribArray(2);
-
-		//index buffer
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_buffer_size(), m_indices.data(), GL_DYNAMIC_DRAW);
-
-		glBindVertexArray(0);
-
-		update_data = false;
-	}
-
 	// all the different draws
 	void draw(Shader& s)
 	{
@@ -204,15 +174,10 @@ public:
             unsigned int diffuse_id = 1;
             unsigned int specular_id = 1;
             for (int i = 0; i < m_textures.size(); i++) {
-                glActiveTexture(GL_TEXTURE0 + i); //activate the correct texture unit
-                std::string number;
                 std::string name = m_textures[i].type;
-                if (name == "texture_diffuse")
-                    number = std::to_string(diffuse_id++);
-                if (name == "texture_specular")
-                    number = std::to_string(specular_id++);
-                s.uniform_data((name + number).c_str(), i); // give the correct location to each texture
-                glBindTexture(GL_TEXTURE_2D, m_textures[i].get_id());
+
+                m_textures[i].use(GL_TEXTURE0 + i);
+                s.uniform_data(name, i); // give the correct location to each texture
             }
             glActiveTexture(GL_TEXTURE0);
         }
