@@ -35,6 +35,7 @@ protected:
     Color ambiant;
     Color diffuse;
     Color specular;
+    float intensity{1};
 
 public:
     Light() : ambiant(.1f, .1f, .1f, 1.f), diffuse(1.f, 1.f, 1.f, 1.f), specular(.9, .9, .9, 1.f) {};
@@ -96,32 +97,55 @@ public:
     }
 };
 
-// class PointLight : public Light
-// {
-// protected:
-//     vec4 position;
-//     float constant;
-//     float linear;
-//     float quadratic;
-//
-// public:
-//     PointLight() : Light(), position(0., 0., 0., 1.), constant(1.f), linear(.22f), quadratic(.2f) {};
-//     PointLight(vec4 position, vec4 ambiant, vec4 diffuse, vec4 specular, float constant = 1.f, float linear = .22f, float quadratic = .2f)
-//         : Light(ambiant, diffuse, specular),  position(position), constant(constant), linear(linear), quadratic(quadratic) {};
-//
-//     void send_to_shader(Shader& s, int index) override
-//     {
-//         s.use();
-//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].position"), position[0], position[1], position[2], position[3]);
-//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].ambiant"), ambiant[0], ambiant[1], ambiant[2], ambiant[3]);
-//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].diffuse"), diffuse[0], diffuse[1], diffuse[2], diffuse[3]);
-//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].specular"), specular[0], specular[1], specular[2], specular[3]);
-//
-//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].constant"), constant);
-//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].linear"), linear);
-//         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].quadratic"), quadratic);
-//     };
-// };
+class PointLight : public Light
+{
+protected:
+    vec4 position;
+    float constant;
+    float linear;
+    float quadratic;
+
+public:
+    static int numberOfLights;
+
+    PointLight() : Light(), position(0., 0., 0., 1.), constant(1.f), linear(.22f), quadratic(.2f) {};
+    PointLight(vec4 position, vec4 ambiant, vec4 diffuse, vec4 specular, float constant = 1.f, float linear = .22f, float quadratic = .2f)
+     : Light(ambiant, diffuse, specular),  position(position), constant(constant), linear(linear), quadratic(quadratic) {};
+
+    void send_to_shader(Shader& s, int index) override
+    {
+        s.use();
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].position"), position[0], position[1], position[2], position[3]);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].ambiant"), ambiant[0], ambiant[1], ambiant[2], ambiant[3]);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].diffuse"), diffuse[0] * intensity, diffuse[1] * intensity, diffuse[2] * intensity, diffuse[3]);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].specular"), specular[0] * intensity, specular[1] * intensity, specular[2] * intensity, specular[3]);
+
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].constant"), constant);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].linear"), linear);
+        s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].quadratic"), quadratic);
+    };
+
+    void drawInspector() override
+    {
+        if(ImGui::TreeNode(std::string("PointLight" + std::to_string(numberOfLights)).c_str()))
+        {
+            ImGui::InputFloat4("position", glm::value_ptr(position));
+            ImGui::InputFloat("intensity", &intensity);
+            ImGui::InputFloat("constant", &constant);
+            ImGui::InputFloat("linear", &linear);
+            ImGui::InputFloat("quadratic", &quadratic);
+
+            ImGui::ColorPicker4("ambiant", glm::value_ptr(ambiant));
+            ImGui::ColorPicker4("diffuse", glm::value_ptr(diffuse));
+            ImGui::ColorPicker4("specular", glm::value_ptr(specular));
+
+            ImGui::TreePop();
+        }
+    }
+};
+
+int PointLight::numberOfLights = 0;
+
 //
 // struct SpotLight
 // {
