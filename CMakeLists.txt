@@ -84,6 +84,7 @@ set(PROJECTS
     framebuffers
     physics
     raytracer
+    PBR
 )
 
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
