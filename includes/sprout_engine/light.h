@@ -56,9 +56,9 @@ class DirectionalLight : public Light
 {
 protected:
     vec4 direction;
-    std::string name;
-
 public:
+    static int numberOfLights;
+
     DirectionalLight() : Light(), direction(0., -1., 0., 1.) {};
     DirectionalLight(glm::vec4 direction, Color ambiant, Color diffuse, Color specular)
         : Light(ambiant, diffuse, specular), direction(direction) {};
@@ -71,8 +71,6 @@ public:
     void set_direction(float* dir) { direction = vec4(dir[0], dir[1], dir[2], 1.f); };
     void set_direction(vec3 dir) { direction = vec4(dir, 1.f); };
 
-    void setName(int index) { name = std::string("Directional light") + std::to_string(index); }
-
     void send_to_shader(Shader& s, int index) override
     {
         s.use();
@@ -84,7 +82,7 @@ public:
 
     void drawInspector() override
     {
-        if(ImGui::TreeNode(name.c_str()))
+        if(ImGui::TreeNode(std::string("DirLight" + std::to_string(numberOfLights)).c_str()))
         {
             ImGui::InputFloat4("direction", glm::value_ptr(direction));
 
@@ -96,6 +94,8 @@ public:
         }
     }
 };
+
+int DirectionalLight::numberOfLights = 0;
 
 class PointLight : public Light
 {

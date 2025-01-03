@@ -24,9 +24,9 @@ public:
         playerCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
         setActiveCamera(&playerCamera);
 
-        m_entities.emplace_back(resources_path + "models/bistro/exterior.obj", "helmet", false);
+        m_entities.emplace_back(resources_path + "models/DamagedHelmet/DamagedHelmet.gltf", "helmet", false);
 
-        s = Shader("default.vs", "default.fs");
+        s = Shader("PBR.vs", "PBR.fs");
         s_post_process = Shader("postprocess.vs", "postprocess.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
         s_tonemapping = Shader("tonemapping.vs", "tonemapping.fs");
@@ -35,26 +35,31 @@ public:
         m_tonemappingPass = std::make_unique<TonemappingPass>(m_width, m_height);
         m_tonemappingPass->m_bIsFinal = true;
 
-        m_pointLightsBuffer.Allocate(100);
-
         m_pointLights =
+        {
                 {
-                        {
-                                {1., 1., 1., 1.},
-                                {1., 1., 1., 1.},
-                                {0., 1., 0., 1.},
-                                {1., 1., 1., 1.}
-                        },
-                        {
-                                {1., 1., 1., 1.},
-                                {1., 1., 1., 1.},
-                                {1., 0., 0., 1.},
-                                {1., 1., 1., 1.},
-                        }
-                };
+                        {1., 1., 1., 1.},
+                        {1., 1., 1., 1.},
+                        {0., 1., 0., 1.},
+                        {1., 1., 1., 1.}
+                },
+                {
+                        {1., 1., 1., 1.},
+                        {1., 1., 1., 1.},
+                        {1., 0., 0., 1.},
+                        {1., 1., 1., 1.},
+                }
+        };
 
-        m_pointLightsBuffer.Update(m_pointLights);
-        m_pointLightsBuffer.Bind(1);
+        m_dirLights =
+        {
+            {
+                    {0., 1., 0., 1.},
+                    {1., 1., 1., 1.},
+                    {1., 1., 1., 1.},
+                    {1., 1., 1., 1.}
+            }
+        };
 
         //set screen buffer/vao
         glGenVertexArrays(1, &quad_vao);
@@ -71,12 +76,12 @@ public:
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
          std::array<std::string, 6> cubemap = {
-                 resources_path + "textures/skybox/right.jpg",
-                 resources_path + "textures/skybox/left.jpg",
-                 resources_path + "textures/skybox/bottom.jpg",
-                 resources_path + "textures/skybox/top.jpg",
-                 resources_path + "textures/skybox/front.jpg",
-                 resources_path + "textures/skybox/back.jpg",
+                 resources_path + "textures/skyboxes/right.bmp",
+                 resources_path + "textures/skyboxes/left.bmp",
+                 resources_path + "textures/skyboxes/bottom.bmp",
+                 resources_path + "textures/skyboxes/top.bmp",
+                 resources_path + "textures/skyboxes/front.bmp",
+                 resources_path + "textures/skyboxes/back.bmp",
          };
          m_skybox = Skybox(cubemap);
 
@@ -108,6 +113,13 @@ public:
                 pointLight.drawInspector();
                 i++;
             }
+            i = 0;
+            for(auto& dirLight : m_dirLights)
+            {
+                DirectionalLight::numberOfLights = i;
+                dirLight.drawInspector();
+                i++;
+            }
             ImGui::End();
 
             // general settings
@@ -134,11 +146,10 @@ public:
                 ImGui::InputFloat("Gamma correction", &gamma, 0.1f);
                 ImGui::InputFloat("Exposure", &exposure, .1f);
                 if (ImGui::Button("reload shader")) {
-                    s = Shader("default.vs", "default.fs");
+                    s = Shader("PBR.vs", "PBR.fs");
                     s_post_process = Shader("postprocess.vs", "postprocess.fs");
                     s_skybox = Shader("skybox.vs", "skybox.fs");
                     s_tonemapping = Shader("tonemapping.vs", "tonemapping.fs");
-                    m_pointLightsBuffer.Update(m_pointLights);
                 }
             }
 
@@ -152,6 +163,10 @@ public:
         s.uniform_data("pointLightsNumber", (int)m_pointLights.size());
         for(int i = 0; i < m_pointLights.size(); i++)
             m_pointLights[i].send_to_shader(s, i);
+
+        s.uniform_data("dirLightsNumber", (int)m_dirLights.size());
+        for(int i = 0; i < m_dirLights.size(); i++)
+            m_dirLights[i].send_to_shader(s, i);
 
         m_colorPass->render(m_entities, *mainCamera, s);
 
@@ -209,7 +224,7 @@ protected:
     unsigned int quad_vao;
     unsigned int quad_buffer;
     std::vector<PointLight> m_pointLights;
-    UniformBuffer<PointLight> m_pointLightsBuffer;
+    std::vector<DirectionalLight> m_dirLights;
 
     std::unique_ptr<ColorPass> m_colorPass;
     std::unique_ptr<TonemappingPass> m_tonemappingPass;

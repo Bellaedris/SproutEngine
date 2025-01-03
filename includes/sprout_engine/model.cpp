@@ -64,12 +64,18 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
         {
             std::vector<Texture> diffuse_maps = loadMaterialTexture(mat, aiTextureType_DIFFUSE, "texture_diffuse");
             std::vector<Texture> normal_maps = loadMaterialTexture(mat, aiTextureType_NORMALS, "texture_normals");
+            std::vector<Texture> ao_maps = loadMaterialTexture(mat, aiTextureType_LIGHTMAP, "texture_ao");
+            std::vector<Texture> metalness_maps = loadMaterialTexture(mat, aiTextureType_METALNESS, "texture_metalness");
+            std::vector<Texture> roughness_maps = loadMaterialTexture(mat, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
             std::vector<Texture> specular_maps = loadMaterialTexture(mat, aiTextureType_SPECULAR, "texture_specular");
             std::vector<Texture> emissive_maps = loadMaterialTexture(mat, aiTextureType_EMISSIVE, "texture_emissive");
 
             textures.insert(textures.end(), diffuse_maps.begin(), diffuse_maps.end());
             textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
             textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
+            textures.insert(textures.end(), ao_maps.begin(), ao_maps.end());
+            textures.insert(textures.end(), metalness_maps.begin(), metalness_maps.end());
+            textures.insert(textures.end(), emissive_maps.begin(), emissive_maps.end());
         }
 
     }
