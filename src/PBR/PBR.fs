@@ -23,11 +23,12 @@ uniform sampler2D shadowmap;
 // PBR functions
 float distributionGGX(in vec3 normal, in vec3 halfway, in float roughness)
 {
-	float rough2 = roughness * roughness;
+	float a = roughness * roughness;
+	float a2 = a * a;
 	float nDotH = max(dot(normal, halfway), 0.f);
 
-	float top = rough2;
-	float bottom = nDotH * nDotH * (rough2 - 1.f) + 1.f;
+	float top = a2;
+	float bottom = nDotH * nDotH * (a2 - 1.f) + 1.f;
 	bottom = M_PI * bottom * bottom;
 
 	return top / bottom;
@@ -35,7 +36,7 @@ float distributionGGX(in vec3 normal, in vec3 halfway, in float roughness)
 
 vec3 schlickFresnel(float cosTheta, vec3 F0)
 {
-	return F0 + (1.f - F0) * pow(1.f - cosTheta, 5.f);
+	return F0 + (1.f - F0) * pow(clamp(1.f - cosTheta, 0.f, 1.f), 5.f);
 }
 
 float geometrySclickGGX(in float normDotDir, in float k)
@@ -43,9 +44,12 @@ float geometrySclickGGX(in float normDotDir, in float k)
 	return normDotDir / (normDotDir * (1.f - k) + k);
 }
 
-float SmithGGX(in vec3 normal, in vec3 viewDir, in vec3 lightDir, in float k)
+float SmithGGX(in vec3 normal, in vec3 viewDir, in vec3 lightDir, in float roughness)
 {
 	// k is a remapping of roughness depending on if we're sampling ibl or direct lighting
+	float r = roughness + 1.f;
+	float k = (r * r) / 8.f;
+
 	return
 	geometrySclickGGX(max(dot(normal, viewDir), 0), k)
 	* geometrySclickGGX(max(dot(normal, lightDir), 0), k);
@@ -86,7 +90,7 @@ vec3 calculateDirectionalLight(vec3 normal, vec3 viewDir, vec3 color, float meta
 		vec3 specular = top / bottom;
 
 		vec3 Ks = F;
-		vec3 Kd = (1.f - Ks);
+		vec3 Kd = vec3(1.f) - Ks;
 		Kd *= 1.f - metalness;
 
 		float NdotL = max(dot(normal, L), 0.f);
@@ -142,11 +146,11 @@ vec3 calculatePointLight(vec3 normal, vec3 viewDir, vec3 color, float metalness,
 		vec3 specular = top / bottom;
 
 		vec3 Ks = F;
-		vec3 Kd = (1.f - Ks);
+		vec3 Kd = vec3(1.f) - Ks;
 		Kd *= 1.f - metalness;
 
 		float NdotL = max(dot(normal, L), 0.f);
-		Lo += Kd * color / M_PI * specular * radiance * NdotL;
+		Lo += (Kd * color / M_PI + specular) * radiance * NdotL;
 	}
 
 	return Lo;
@@ -211,7 +215,7 @@ void main()
 	vec3 color = texture(texture_diffuse, texCoord).xyz;
 	vec3 emissive = texture(texture_emissive, texCoord).xyz;
 	float metalness = texture(texture_metalness, texCoord).b;
-	float roughness = texture(texture_roughness, texCoord).g;
+	float roughness = texture(texture_metalness, texCoord).g;
 	float ao = texture(texture_ao, texCoord).r;
 
 	vec3 normal = texture(texture_normals, texCoord).xyz;
@@ -230,7 +234,7 @@ void main()
 
 	finalColor += ambiant;
 	finalColor += emissive;
-	finalColor /= (finalColor + vec3(1.f));
+	finalColor = finalColor / (finalColor + vec3(1.f));
 
 	FragColor = vec4(pow(finalColor, vec3(1.f / gamma)), 1.f);
 }

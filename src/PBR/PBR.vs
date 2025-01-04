@@ -22,7 +22,10 @@ uniform mat4 lightspaceMatrix;
 
 void main()
 {
-	TBN = mat3(tangent, bitangent, normal);
+	vec3 T = normalize(vec3(modelMatrix * vec4(tangent,   0.0)));
+	vec3 B = normalize(vec3(modelMatrix * vec4(bitangent, 0.0)));
+	vec3 N = normalize(vec3(modelMatrix * vec4(normal,    0.0)));
+	TBN = mat3(T, B, N);
 	texCoord = uv;
 	norm = (normalMatrix * vec4(normal, 0.f)).xyz;
 	position = modelMatrix * vec4(pos, 1.f);

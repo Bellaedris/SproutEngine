@@ -42,12 +42,6 @@ public:
                         {1., 1., 1., 1.},
                         {0., 1., 0., 1.},
                         {1., 1., 1., 1.}
-                },
-                {
-                        {1., 1., 1., 1.},
-                        {1., 1., 1., 1.},
-                        {1., 0., 0., 1.},
-                        {1., 1., 1., 1.},
                 }
         };
 
@@ -60,20 +54,6 @@ public:
                     {1., 1., 1., 1.}
             }
         };
-
-        //set screen buffer/vao
-        glGenVertexArrays(1, &quad_vao);
-        glGenBuffers(1, &quad_buffer);
-        glBindVertexArray(quad_vao);
-
-        glBindBuffer(GL_ARRAY_BUFFER, quad_buffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
          std::array<std::string, 6> cubemap = {
                  resources_path + "textures/skyboxes/right.bmp",
@@ -137,12 +117,8 @@ public:
             }
             if (ImGui::CollapsingHeader("General Parameters")) {
                 ImGui::Checkbox("Wireframe", &wireframe_mode);
-                ImGui::Checkbox("Show AABB", &show_aabb);
                 ImGui::Checkbox("Show before post process", &noPostProcess);
                 ImGui::Checkbox("Draw skybox", &drawSkybox);
-                ImGui::InputFloat("FoV value", &fov, 1.f);
-                ImGui::InputFloat("Aspect ratio w", &w, 1.f);
-                ImGui::InputFloat("Aspect ratio h", &h, 1.f);
                 ImGui::InputFloat("Gamma correction", &gamma, 0.1f);
                 ImGui::InputFloat("Exposure", &exposure, .1f);
                 if (ImGui::Button("reload shader")) {
@@ -155,6 +131,8 @@ public:
 
             ImGui::End();
         }
+
+        m_pointLights[0].setPosition(glm::vec4(std::cosf(timeSinceStartup) * 10.f, 0.f, std::sinf(timeSinceStartup) * 10.f, 1.f));
 
         //draw the scene
         s.use();
@@ -230,12 +208,9 @@ protected:
     std::unique_ptr<TonemappingPass> m_tonemappingPass;
 
     // imgui inputs
-    float w = 16.f;
-    float h = 9.f;
     float gamma = 2.2f;
     float exposure = 1.f;
     bool wireframe_mode = false;
-    bool show_aabb = false;
     bool noPostProcess = false;
     bool drawSkybox = true;
 
