@@ -84,6 +84,7 @@ public:
     {
         if(ImGui::TreeNode(std::string("DirLight" + std::to_string(numberOfLights)).c_str()))
         {
+            ImGui::InputFloat("intensity", &intensity);
             ImGui::InputFloat4("direction", glm::value_ptr(direction));
 
             ImGui::ColorPicker4("ambiant", glm::value_ptr(ambiant));
@@ -111,6 +112,8 @@ public:
     PointLight() : Light(), position(0., 0., 0., 1.), constant(1.f), linear(.22f), quadratic(.2f) {};
     PointLight(vec4 position, vec4 ambiant, vec4 diffuse, vec4 specular, float constant = 1.f, float linear = .22f, float quadratic = .2f)
      : Light(ambiant, diffuse, specular),  position(position), constant(constant), linear(linear), quadratic(quadratic) {};
+
+    void setPosition(glm::vec4 pos) {position = pos;};
 
     void send_to_shader(Shader& s, int index) override
     {
