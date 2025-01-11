@@ -200,6 +200,36 @@ public:
         return t;
     }
 
+    static Texture loadHDRTexture(const char* path)
+    {
+        Texture t;
+        int width, height, nbChan;
+        stbi_set_flip_vertically_on_load(true);
+        float* data = stbi_loadf(path, &width, &height, &nbChan, 0);
+
+        if (data)
+        {
+            glBindTexture(GL_TEXTURE_2D, t.get_id());
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
+            std::cout << "loaded hdr texture " << path << std::endl;
+
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        else
+        {
+            std::cout << "error reading the HDR image file at: " << path << std::endl;
+        }
+        stbi_image_free(data);
+
+        return t;
+    }
+
 	inline unsigned int get_id() const { return id; };
 
 	void use(const GLenum texture_unit = GL_TEXTURE0) const
