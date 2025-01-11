@@ -1,9 +1,9 @@
 #include <sprout_engine/SproutApp.h>
 
-#include <sprout_engine/texture.h>
 #include <sprout_engine/light.h>
 #include <sprout_engine/skybox.h>
 #include <sprout_engine/entity.h>
+#include <sprout_engine/cubemapHDRI.h>
 
 #include <glm/glm.hpp>
 
@@ -55,15 +55,15 @@ public:
             }
         };
 
-         std::array<std::string, 6> cubemap = {
-                 resources_path + "textures/skyboxes/right.bmp",
-                 resources_path + "textures/skyboxes/left.bmp",
-                 resources_path + "textures/skyboxes/bottom.bmp",
-                 resources_path + "textures/skyboxes/top.bmp",
-                 resources_path + "textures/skyboxes/front.bmp",
-                 resources_path + "textures/skyboxes/back.bmp",
-         };
-         m_skybox = Skybox(cubemap);
+//         std::array<std::string, 6> cubemap = {
+//                 resources_path + "textures/skyboxes/right.bmp",
+//                 resources_path + "textures/skyboxes/left.bmp",
+//                 resources_path + "textures/skyboxes/bottom.bmp",
+//                 resources_path + "textures/skyboxes/top.bmp",
+//                 resources_path + "textures/skyboxes/front.bmp",
+//                 resources_path + "textures/skyboxes/back.bmp",
+//         };
+         m_skybox = HDRCubemap(std::string(resources_path + "textures/skyboxes/lilienstein_4k.hdr").c_str());
 
         glEnable(GL_DEPTH_TEST);
 
@@ -136,8 +136,8 @@ public:
 
         //draw the scene
         s.use();
-        s.uniform_data("gamma", gamma);
-        s.uniform_data("shadowmap", 2);
+        s.uniform_data("irradianceMap", 8);
+        m_skybox.useIrradiance(8);
         s.uniform_data("pointLightsNumber", (int)m_pointLights.size());
         for(int i = 0; i < m_pointLights.size(); i++)
             m_pointLights[i].send_to_shader(s, i);
@@ -155,12 +155,13 @@ public:
             s_skybox.uniform_data("viewMatrix", skyboxView);
             s_skybox.uniform_data("projectionMatrix", mainCamera->projection());
 
-            m_skybox.draw(s_skybox);
+            m_skybox.draw();
         }
 
         // apply tonemapping
         s_tonemapping.use();
         s_tonemapping.uniform_data("exposure", exposure);
+        s_tonemapping.uniform_data("gamma", gamma);
         m_colorPass->activateTexture();
         s_tonemapping.uniform_data("frame", 0);
         m_tonemappingPass->render(m_entities, *mainCamera, s_tonemapping);
@@ -194,7 +195,7 @@ protected:
     std::vector<Entity> m_entities;
     Shader s, s_post_process, s_skybox, s_tonemapping;
     Camera playerCamera;
-    Skybox m_skybox;
+    HDRCubemap m_skybox;
 
     GLuint fbo;
     Texture fbo_texture;

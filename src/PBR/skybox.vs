@@ -9,7 +9,7 @@ uniform mat4 projectionMatrix;
 
 void main()
 {
-    texCoords = vec3(position.x, -position.y, position.z);
+    texCoords = vec3(position.x, position.y, position.z);
     vec4 pos = projectionMatrix * viewMatrix * vec4(position, 1.f);
     gl_Position = pos.xyww; // trick the perspective division: z is always 1, so always on top
 }

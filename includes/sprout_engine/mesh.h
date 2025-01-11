@@ -75,9 +75,21 @@ public:
 		glBindVertexArray(0);
 	};
 
-    // read a Mesh from file
+    // build a Mesh from vertices and texcoords data
     Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec2>& texcoords)
             : update_data(false), m_positions(vertices), m_texcoords(texcoords)
+    {
+        // Mesh buffers/vao
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &buffer);
+        glGenBuffers(1, &index_buffer);
+
+        build_buffer();
+    };
+
+    // build a Mesh from vertices data
+    Mesh(const std::vector<glm::vec3> &vertices)
+            : update_data(false), m_positions(vertices)
     {
         // Mesh buffers/vao
         glGenVertexArrays(1, &vao);
@@ -187,13 +199,7 @@ public:
 		glBindVertexArray(0);
 	};
 
-	/**
-	 * Draw a mesh at the center of the world
-	 * \param s a shader that will receive an mvp matrix and texture
-	 * \param c a camera to get a view and a projection
-	 * \param t a texture to put on the Mesh
-	 */		
-	void draw_flat(Shader& s);
+	void draw_unindexed();
 
     void draw_strip(Shader &s);
 
@@ -232,4 +238,6 @@ public:
      * @return a mesh representing a plane from [-1;-1] to [1;1]
      */
     static Mesh generatePlane();
+
+    static Mesh generateCube();
 };

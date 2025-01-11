@@ -25,15 +25,63 @@ Mesh Mesh::generatePlane() {
     return {vertices, texcoords};
 }
 
-void Mesh::draw_flat(Shader &s)
+Mesh Mesh::generateCube()
+{
+    std::vector<glm::vec3> cubeVertices = {
+            // positions
+            { -1.0f, -1.0f, -1.0f },
+            { 1.0f,  1.0f, -1.0f },
+            { 1.0f, -1.0f, -1.0f },
+            { 1.0f,  1.0f, -1.0f },
+            { -1.0f, -1.0f, -1.0f },
+            { -1.0f,  1.0f, -1.0f },
+
+            {-1.0f, -1.0f,  1.0f},
+            {1.0f, -1.0f,  1.0f },
+            {1.0f,  1.0f,  1.0f },
+            {1.0f,  1.0f,  1.0f },
+            {-1.0f,  1.0f,  1.0f},
+            {-1.0f, -1.0f,  1.0f},
+
+            {-1.0f,  1.0f,  1.0f},
+            {-1.0f,  1.0f, -1.0f},
+            {-1.0f, -1.0f, -1.0f},
+            {-1.0f, -1.0f, -1.0f},
+            {-1.0f, -1.0f,  1.0f},
+            {-1.0f,  1.0f,  1.0f},
+
+            {1.0f,  1.0f,  1.0f},
+            {1.0f, -1.0f, -1.0f},
+            {1.0f,  1.0f, -1.0f},
+            {1.0f, -1.0f, -1.0f},
+            {1.0f,  1.0f,  1.0f},
+            {1.0f, -1.0f,  1.0f},
+
+            {-1.0f, -1.0f, -1.0},
+            {1.0f, -1.0f, -1.0f},
+            {1.0f, -1.0f,  1.0f},
+            {1.0f, -1.0f,  1.0f},
+            {-1.0f, -1.0f,  1.0f},
+            {-1.0f, -1.0f, -1.0f},
+
+            {-1.0f,  1.0f, -1.0f},
+            {1.0f,  1.0f , 1.0f},
+            {1.0f,  1.0f, -1.0f},
+            {1.0f,  1.0f,  1.0f},
+            {-1.0f,  1.0f, -1.0f},
+            {-1.0f,  1.0f,  1.0f}
+    };
+
+    return {cubeVertices};
+}
+
+void Mesh::draw_unindexed()
 {
     if (update_data)
         build_buffer();
 
-    s.use();
-
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_TRIANGLES, 0, m_positions.size());
     glBindVertexArray(0);
 }
 

@@ -18,7 +18,16 @@ uniform sampler2D texture_normals;
 uniform sampler2D texture_emissive;
 uniform sampler2D texture_ao;
 
-uniform sampler2D shadowmap;
+uniform samplerCube irradianceMap;
+
+struct SurfaceParameter
+{
+	vec3 albedo;
+	float metalness;
+	vec3 normal;
+	float roughness;
+	vec3 F0;
+};
 
 // PBR functions
 float distributionGGX(in vec3 normal, in vec3 halfway, in float roughness)
@@ -37,6 +46,12 @@ float distributionGGX(in vec3 normal, in vec3 halfway, in float roughness)
 vec3 schlickFresnel(float cosTheta, vec3 F0)
 {
 	return F0 + (1.f - F0) * pow(clamp(1.f - cosTheta, 0.f, 1.f), 5.f);
+}
+
+// from https://seblagarde.wordpress.com/2011/08/17/hello-world/, corrected fresnel for our ambiant light, that does take roughness into account
+vec3 schlickFresnelRoughness(float cosTheta, vec3 F0, float roughness)
+{
+	return F0 + (max(vec3(1.f - roughness), F0) - F0) * pow(clamp(1.f - cosTheta, .0f, 1.f), 5.f);
 }
 
 float geometrySclickGGX(in float normDotDir, in float k)
@@ -66,7 +81,7 @@ struct DirectionalLight
 uniform DirectionalLight dirLights[10];
 uniform int dirLightsNumber;
 
-vec3 calculateDirectionalLight(vec3 normal, vec3 viewDir, vec3 color, float metalness, float roughness)
+vec3 calculateDirectionalLight(vec3 viewDir, SurfaceParameter surface)
 {
 	vec3 Lo = vec3(0.f);
 	for(int i = 0; i < dirLightsNumber; i++)
@@ -78,23 +93,21 @@ vec3 calculateDirectionalLight(vec3 normal, vec3 viewDir, vec3 color, float meta
 		vec3 radiance = light.diffuse.xyz;
 
 		float cosTheta = max(dot(viewDir, H), 0);
-		vec3 F0 = vec3(.04f);
-		F0 = mix(F0, color, metalness);
 
-		float D = distributionGGX(normal, H, roughness);
-		vec3 F = schlickFresnel(cosTheta, F0);
-		float G = SmithGGX(normal, viewDir, L, roughness);
+		float D = distributionGGX(surface.normal, H, surface.roughness);
+		vec3 F = schlickFresnel(cosTheta, surface.F0);
+		float G = SmithGGX(surface.normal, viewDir, L, surface.roughness);
 
 		vec3 top = D * F * G;
-		float bottom = 4.f * max(dot(viewDir, normal), 0) * max(dot(L, normal), 0) + .0001f; // avoid div by zero...
+		float bottom = 4.f * max(dot(viewDir, surface.normal), 0) * max(dot(L, surface.normal), 0) + .0001f; // avoid div by zero...
 		vec3 specular = top / bottom;
 
 		vec3 Ks = F;
 		vec3 Kd = vec3(1.f) - Ks;
-		Kd *= 1.f - metalness;
+		Kd *= 1.f - surface.metalness;
 
-		float NdotL = max(dot(normal, L), 0.f);
-		Lo += (Kd * color / M_PI + specular) * radiance * NdotL;
+		float NdotL = max(dot(surface.normal, L), 0.f);
+		Lo += (Kd * surface.albedo / M_PI + specular) * radiance * NdotL;
 	}
 
 	return Lo;
@@ -120,7 +133,7 @@ struct PointLight
 uniform PointLight pointLights[100];
 uniform int pointLightsNumber;
 
-vec3 calculatePointLight(vec3 normal, vec3 viewDir, vec3 color, float metalness, float roughness)
+vec3 calculatePointLight(vec3 viewDir, SurfaceParameter surface)
 {
 	vec3 Lo = vec3(0.f);
 	for(int i = 0; i < pointLightsNumber; i++)
@@ -134,23 +147,21 @@ vec3 calculatePointLight(vec3 normal, vec3 viewDir, vec3 color, float metalness,
 		vec3 radiance = light.diffuse.xyz * attenuation;
 
 		float cosTheta = max(dot(viewDir, H), 0);
-		vec3 F0 = vec3(.04f);
-		F0 = mix(F0, color, metalness);
 
-		float D = distributionGGX(normal, H, roughness);
-		vec3 F = schlickFresnel(cosTheta, F0);
-		float G = SmithGGX(normal, viewDir, L, roughness);
+		float D = distributionGGX(surface.normal, H, surface.roughness);
+		vec3 F = schlickFresnel(cosTheta, surface.F0);
+		float G = SmithGGX(surface.normal, viewDir, L, surface.roughness);
 
 		vec3 top = D * F * G;
-		float bottom = 4.f * max(dot(viewDir, normal), 0) * max(dot(L, normal), 0) + .0001f; // avoid div by zero...
+		float bottom = 4.f * max(dot(viewDir, surface.normal), 0) * max(dot(L, surface.normal), 0) + .0001f; // avoid div by zero...
 		vec3 specular = top / bottom;
 
 		vec3 Ks = F;
 		vec3 Kd = vec3(1.f) - Ks;
-		Kd *= 1.f - metalness;
+		Kd *= 1.f - surface.metalness;
 
-		float NdotL = max(dot(normal, L), 0.f);
-		Lo += (Kd * color / M_PI + specular) * radiance * NdotL;
+		float NdotL = max(dot(surface.normal, L), 0.f);
+		Lo += (Kd * surface.albedo / M_PI + specular) * radiance * NdotL;
 	}
 
 	return Lo;
@@ -193,26 +204,26 @@ vec3 calculatePointLight(vec3 normal, vec3 viewDir, vec3 color, float metalness,
 //	}
 //}
 
-float computeShadow(vec4 lightspace_pos)
-{
-	//gl_Position does perspective division automatically but not our out param
-	vec3 projCoord = lightspace_pos.xyz / lightspace_pos.w;
-
-	projCoord = projCoord * 0.5 + 0.5; // from [-1;1] to [0;1]
-
-	if (projCoord.z > 1.f)
-	return 1.f;
-
-	float bias = 0.005;
-	// in the shadow if current pixel is in front of shadowmap
-	return projCoord.z > texture(shadowmap, projCoord.xy).r + bias ? .9f : 0.f;
-}
+//float computeShadow(vec4 lightspace_pos)
+//{
+//	//gl_Position does perspective division automatically but not our out param
+//	vec3 projCoord = lightspace_pos.xyz / lightspace_pos.w;
+//
+//	projCoord = projCoord * 0.5 + 0.5; // from [-1;1] to [0;1]
+//
+//	if (projCoord.z > 1.f)
+//	return 1.f;
+//
+//	float bias = 0.005;
+//	// in the shadow if current pixel is in front of shadowmap
+//	return projCoord.z > texture(shadowmap, projCoord.xy).r + bias ? .9f : 0.f;
+//}
 
 uniform float gamma;
 
 void main()
 {
-	vec3 color = texture(texture_diffuse, texCoord).xyz;
+	vec3 albedo = texture(texture_diffuse, texCoord).xyz;
 	vec3 emissive = texture(texture_emissive, texCoord).xyz;
 	float metalness = texture(texture_metalness, texCoord).b;
 	float roughness = texture(texture_metalness, texCoord).g;
@@ -224,17 +235,28 @@ void main()
 
 	vec3 viewDir = normalize(cameraPos.xyz - position.xyz);
 
-	float shadow = 0.f; //computeShadow(lightspacePos);
+	// compute diffuse/specular parts
+	float cosTheta = max(dot(viewDir, normal), 0);
+	vec3 F0 = vec3(.04f);
+	F0 = mix(F0, albedo, metalness);
 
-	vec3 finalColor = calculateDirectionalLight(normal, viewDir, color, metalness, roughness);
-	finalColor += calculatePointLight(normal, viewDir, color, metalness, roughness);
+	vec3 kS = schlickFresnel(cosTheta, F0);
+	vec3 kD = 1.f - kS;
+	vec3 irradiance = texture(irradianceMap, normal).xyz;
+	vec3 diffuse = irradiance * albedo * ao;
+	vec3 ambiant = kD * diffuse * ao;
+
+	//float shadow = computeShadow(lightspacePos);
+
+	// pack all our data in a struct
+	SurfaceParameter surface = SurfaceParameter(albedo, metalness, normal, roughness, F0);
+	vec3 finalColor = calculateDirectionalLight(viewDir, surface);
+	finalColor += calculatePointLight(viewDir, surface);
 	//finalcolor += calculateSpotLight(SpotLight[0], normal, viewDir, color);
-
-	vec3 ambiant = vec3(.01f) * color * ao;
 
 	finalColor += ambiant;
 	finalColor += emissive;
 	finalColor = finalColor / (finalColor + vec3(1.f));
 
-	FragColor = vec4(pow(finalColor, vec3(1.f / gamma)), 1.f);
+	FragColor = vec4(finalColor, 1.f);
 }
