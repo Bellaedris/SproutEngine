@@ -8,7 +8,7 @@ DepthPass::DepthPass(int width, int height)
     : Pass(width, height)
 {
     m_texture = Texture::buildDepthTexture(width, height);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_texture.get_id(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_texture.handle(), 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
 }

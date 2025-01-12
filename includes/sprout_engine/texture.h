@@ -185,7 +185,7 @@ public:
     static Texture buildDepthTexture(int width, int height)
     {
         Texture t;
-        glBindTexture(GL_TEXTURE_2D, t.get_id());
+        glBindTexture(GL_TEXTURE_2D, t.handle());
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
@@ -209,7 +209,7 @@ public:
 
         if (data)
         {
-            glBindTexture(GL_TEXTURE_2D, t.get_id());
+            glBindTexture(GL_TEXTURE_2D, t.handle());
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -230,7 +230,7 @@ public:
         return t;
     }
 
-	inline unsigned int get_id() const { return id; };
+	inline unsigned int handle() const { return id; };
 
 	void use(const GLenum texture_unit = GL_TEXTURE0) const
 	{

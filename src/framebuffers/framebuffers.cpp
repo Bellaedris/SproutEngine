@@ -41,17 +41,17 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
         fbo_texture = Texture(1366, 768, GL_RGB, GL_RGB);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_texture.get_id(), 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_texture.handle(), 0);
 
         fbo_depth = Texture::buildDepthTexture(1366, 768);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth.get_id(), 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo_depth.handle(), 0);
 
         // shadow mapping framebuffer/texture
         glGenFramebuffers(1, &light_fb);
         glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
 
         light_fb_depth = Texture::buildDepthTexture(1366, 768);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.handle(), 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
 
@@ -126,7 +126,8 @@ public:
                 if (ImGui::Button("Update")) {
                     glBindFramebuffer(GL_FRAMEBUFFER, light_fb);
                     light_fb_depth = Texture::buildDepthTexture(shadowmapRes[0], shadowmapRes[1]);
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, light_fb_depth.get_id(), 0);
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                                           light_fb_depth.handle(), 0);
                 }
             }
             if (ImGui::CollapsingHeader("Parameters")) {
@@ -216,7 +217,7 @@ public:
             s.uniform_data("lightspaceMatrix", lightspaceMatrix);
 
             glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, light_fb_depth.get_id());
+            glBindTexture(GL_TEXTURE_2D, light_fb_depth.handle());
             entity.draw(s, playerCamera.getFrustum(), entity.getTransform());
         }
 
@@ -250,7 +251,7 @@ public:
 
             s_post_process.use();
             glBindVertexArray(vao);
-            glBindTexture(GL_TEXTURE_2D, fbo_texture.get_id());
+            glBindTexture(GL_TEXTURE_2D, fbo_texture.handle());
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 

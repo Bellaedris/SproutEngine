@@ -19,7 +19,7 @@ public:
     Pass(int width, int height) : m_width(width), m_height(height) {};
     virtual void render(std::vector<Entity> &entities, const Camera &camera, Shader &shader) = 0;
 
-    int textureHandle() { return m_texture.get_id(); };
+    int textureHandle() { return m_texture.handle(); };
     void activateTexture(GLenum textureUnit = GL_TEXTURE0) { m_texture.use(); };
 
     void blitToScreen()
