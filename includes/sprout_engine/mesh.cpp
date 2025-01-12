@@ -7,20 +7,20 @@
 Mesh Mesh::generatePlane() {
 
     std::vector<glm::vec3> vertices =
-            {
-                    {-1, 1, 0},
-                    {-1, -1, 0},
-                    {1, 1, 0},
-                    {1, -1, 0}
-            };
+    {
+        {-1, 1, 0},
+        {-1, -1, 0},
+        {1, 1, 0},
+        {1, -1, 0}
+    };
 
     std::vector<glm::vec2> texcoords =
-            {
-                    {0.0f, 1.0f},
-                    {0.0f, 0.0f},
-                    {1.0f, 1.0f},
-                    {1.0f, 0.0f},
-            };
+    {
+        {0.0f, 1.0f},
+        {0.0f, 0.0f},
+        {1.0f, 1.0f},
+        {1.0f, 0.0f}
+    };
 
     return {vertices, texcoords};
 }
@@ -85,11 +85,9 @@ void Mesh::draw_unindexed()
     glBindVertexArray(0);
 }
 
-void Mesh::draw_strip(Shader &s) {
+void Mesh::draw_strip() {
     if (update_data)
         build_buffer();
-
-    s.use();
 
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, m_positions.size());
@@ -142,7 +140,7 @@ void Mesh::build_buffer() {
 
     // buffer containing all vertices data
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    size_t size = vertex_buffer_size() + normal_buffer_size() + m_texcoords.size() * sizeof(vec2) + tangent_buffer_size() + bitangent_buffer_size();
+    size_t size = vertex_buffer_size() + normal_buffer_size() + texcoords_buffer_size() + tangent_buffer_size() + bitangent_buffer_size();
     glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
 
     //positions subdata

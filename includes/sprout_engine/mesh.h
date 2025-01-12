@@ -201,7 +201,7 @@ public:
 
 	void draw_unindexed();
 
-    void draw_strip(Shader &s);
+    void draw_strip();
 
 	void draw(Shader &s, const Frustum &frustum, const Transform& transform)
 	{
