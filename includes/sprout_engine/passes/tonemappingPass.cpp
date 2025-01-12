@@ -11,7 +11,7 @@ TonemappingPass::TonemappingPass(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 
     m_texture = Texture(width, height, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture.get_id(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture.handle(), 0);
 
     m_renderQuad = Mesh::generatePlane();
 }
@@ -24,7 +24,7 @@ void TonemappingPass::render(std::vector<Entity> &entities, const Camera &camera
 
     glDisable(GL_DEPTH_TEST);
 
-    m_renderQuad.draw_strip(shader);
+    m_renderQuad.draw_strip();
 
     glEnable(GL_DEPTH_TEST);
 }

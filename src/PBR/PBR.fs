@@ -19,6 +19,8 @@ uniform sampler2D texture_emissive;
 uniform sampler2D texture_ao;
 
 uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+uniform sampler2D brdfLUT;
 
 struct SurfaceParameter
 {
@@ -235,16 +237,28 @@ void main()
 
 	vec3 viewDir = normalize(cameraPos.xyz - position.xyz);
 
-	// compute diffuse/specular parts
+	// compute IBL diffuse/specular parts
+	//diffuse
 	float cosTheta = max(dot(viewDir, normal), 0);
 	vec3 F0 = vec3(.04f);
 	F0 = mix(F0, albedo, metalness);
 
-	vec3 kS = schlickFresnel(cosTheta, F0);
+	// specular
+	vec3 R = reflect(-viewDir, normal);
+	const float MAX_REFLEXION_LOD = 4.0; // replace with the amount of mips in the prefiltered map
+	vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_REFLEXION_LOD).xyz;
+
+	vec3 F = schlickFresnelRoughness(max(dot(normal, viewDir), .0f), F0, roughness);
+	vec2 envBRDF = texture(brdfLUT, vec2(max(dot(normal, viewDir), .0f), roughness)).xy;
+	vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+
+	vec3 kS = F;
 	vec3 kD = 1.f - kS;
+	kD *= 1.f - metalness;
+
 	vec3 irradiance = texture(irradianceMap, normal).xyz;
 	vec3 diffuse = irradiance * albedo * ao;
-	vec3 ambiant = kD * diffuse * ao;
+	vec3 ambiant = (kD * diffuse + specular) * ao;
 
 	//float shadow = computeShadow(lightspacePos);
 

@@ -7,14 +7,16 @@
 ColorPass::ColorPass(int width, int height)
     : Pass(width, height)
 {
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
     glGenFramebuffers(1, &m_framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 
     m_texture = Texture(width, height, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture.get_id(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture.handle(), 0);
 
     m_depthTexture = Texture::buildDepthTexture(width, height);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.get_id(), 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.handle(), 0);
 }
 
 void ColorPass::render(std::vector<Entity> &entities, const Camera &camera, Shader &shader)

@@ -9,7 +9,6 @@ out vec4 FragColor;
 uniform samplerCube hdrMap;
 uniform float roughness;
 
-
 // Hammersley sequence (low discrepancy sequence)
 float RadicalInverse_VdC(uint bits)
 {
@@ -31,7 +30,7 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
 {
     float a = roughness*roughness;
 
-    float phi = 2.0 * PI * Xi.x;
+    float phi = 2.0 * M_PI * Xi.x;
     float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y));
     float sinTheta = sqrt(1.0 - cosTheta*cosTheta);
 
@@ -63,7 +62,17 @@ void main() {
         vec2 Xi = Hammersley(i, sampleCount);
         vec3 H = ImportanceSampleGGX(Xi, normal, roughness);
         vec3 L = normalize(2.f * dot(viewDir, H) * H - viewDir);
+
+        float NdotL = max(dot(normal, L), .0f);
+        if(NdotL > .0f)
+        {
+            // we can reduce brigh dots caused by the low amount of samples using https://chetanjags.wordpress.com/2015/08/26/image-based-lighting/
+            // By instead of directly sampling the hdr map, sample a mip lvl of the map based on the PDF and roughness
+            prefilteredColor += texture(hdrMap, L).xyz * NdotL;
+            totalWeight += NdotL;
+        }
     }
+    prefilteredColor /= totalWeight;
 
     FragColor = vec4(prefilteredColor, 1.f);
 }

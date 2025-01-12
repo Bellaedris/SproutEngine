@@ -138,6 +138,10 @@ public:
         s.use();
         s.uniform_data("irradianceMap", 8);
         m_skybox.useIrradiance(8);
+        s.uniform_data("prefilterMap", 9);
+        m_skybox.usePrefilter(9);
+        s.uniform_data("brdfLUT", 10);
+        m_skybox.useBrdfLUT(10);
         s.uniform_data("pointLightsNumber", (int)m_pointLights.size());
         for(int i = 0; i < m_pointLights.size(); i++)
             m_pointLights[i].send_to_shader(s, i);
