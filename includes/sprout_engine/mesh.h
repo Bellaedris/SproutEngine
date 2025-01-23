@@ -183,8 +183,6 @@ public:
         else {
             //render using the available textures
             s.uniform_data("has_texture", 0);
-            unsigned int diffuse_id = 1;
-            unsigned int specular_id = 1;
             for (int i = 0; i < m_textures.size(); i++) {
                 std::string name = m_textures[i].type;
 

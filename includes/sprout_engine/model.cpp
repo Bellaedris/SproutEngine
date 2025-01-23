@@ -65,8 +65,8 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
             std::vector<Texture> diffuse_maps = loadMaterialTexture(mat, aiTextureType_DIFFUSE, "texture_diffuse");
             std::vector<Texture> normal_maps = loadMaterialTexture(mat, aiTextureType_NORMALS, "texture_normals");
             std::vector<Texture> ao_maps = loadMaterialTexture(mat, aiTextureType_LIGHTMAP, "texture_ao");
-            std::vector<Texture> metalness_maps = loadMaterialTexture(mat, aiTextureType_METALNESS, "texture_metalness");
-            std::vector<Texture> roughness_maps = loadMaterialTexture(mat, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+            std::vector<Texture> metalness_maps = loadMaterialTexture(mat, aiTextureType_METALNESS, "texture_roughnessMetalness");
+            std::vector<Texture> roughness_maps = loadMaterialTexture(mat, aiTextureType_UNKNOWN, "texture_roughnessMetalness");
             std::vector<Texture> specular_maps = loadMaterialTexture(mat, aiTextureType_SPECULAR, "texture_specular");
             std::vector<Texture> emissive_maps = loadMaterialTexture(mat, aiTextureType_EMISSIVE, "texture_emissive");
 

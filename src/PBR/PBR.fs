@@ -12,8 +12,7 @@ in vec4 lightspacePos;
 in mat3 TBN;
 
 uniform sampler2D texture_diffuse;
-uniform sampler2D texture_metalness;
-uniform sampler2D texture_roughness;
+uniform sampler2D texture_roughnessMetalness;
 uniform sampler2D texture_normals;
 uniform sampler2D texture_emissive;
 uniform sampler2D texture_ao;
@@ -227,8 +226,8 @@ void main()
 {
 	vec3 albedo = texture(texture_diffuse, texCoord).xyz;
 	vec3 emissive = texture(texture_emissive, texCoord).xyz;
-	float metalness = texture(texture_metalness, texCoord).b;
-	float roughness = texture(texture_metalness, texCoord).g;
+	float metalness = texture(texture_roughnessMetalness, texCoord).b;
+	float roughness = texture(texture_roughnessMetalness, texCoord).g;
 	float ao = texture(texture_ao, texCoord).r;
 
 	vec3 normal = texture(texture_normals, texCoord).xyz;
