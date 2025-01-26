@@ -85,6 +85,7 @@ set(PROJECTS
     physics
     raytracer
     PBR
+    editor
 )
 
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
@@ -153,13 +154,13 @@ function(create_project_from_sources project)
     endif(WIN32)
     # copy shader files to build directory
     file(GLOB SHADERS
-             "src/${project}/*.vs"
-             # "src/${chapter}/*.frag"
-             "src/${project}/*.fs"
-             "src/${project}/*.tcs"
-             "src/${project}/*.tes"
-             "src/${project}/*.gs"
-             "src/${project}/*.comp"
+             "shaders/**/*.vs"
+             "shaders/**/*.frag"
+             "shaders/**/*.fs"
+             "shaders/**/*.tcs"
+             "shaders/**/*.tes"
+             "shaders/**/*.gs"
+             "shaders/**/*.comp"
     )
 	# copy dlls
 	file(GLOB DLLS "dlls/*.dll")
