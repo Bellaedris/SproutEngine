@@ -21,7 +21,7 @@ protected:
     std::string m_name{"entity"};
 
 public:
-    explicit Entity(const std::string& path, const std::string& name = "entity", bool flip_uv = false);
+    explicit Entity(const std::string& path, const std::string& name, bool flip_uv = false);
 
     void UpdatePosition(const glm::vec3& position);
 

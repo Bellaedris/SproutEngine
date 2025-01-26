@@ -9,7 +9,10 @@
 Entity::Entity(const std::string& path, const std::string& name, bool flip_uv)
     : m_model(path, flip_uv)
     , m_name(name)
-{}
+{
+    if(name.empty())
+        m_name = path;
+}
 
 void Entity::UpdatePosition(const glm::vec3& position)
 {
