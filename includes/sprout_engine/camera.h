@@ -2,7 +2,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <sprout_engine/shader.h>
-#include "inspectable.h"
 #include "icamera.h"
 
 using namespace glm;
@@ -42,7 +41,7 @@ struct Frustum
 
 const float CAMERA_SENSITIVITY = .1f;
 
-class Camera : public Inspectable, public ICamera
+class Camera : /*public Inspectable,*/ public ICamera
 {
 protected:
 	int currentId;
@@ -75,7 +74,7 @@ public:
 	Camera();
 	Camera(const glm::vec3 &pos, const glm::vec3 &up, float pitch, float yaw, float p_znear, float p_zfar, float p_fov, float p_aspectRatio);
 
-    void drawInspector() override;
+    //void drawInspector(const Camera &camera) override;
 
 	[[nodiscard]] glm::mat4 view() const override;
     [[nodiscard]] glm::mat4 projection() const override;

@@ -9,8 +9,6 @@
 
 #include <string>
 
-#include <IMGUI/imgui.h>
-
 using namespace glm;
 
 class Light : public Inspectable
@@ -49,7 +47,7 @@ public:
     };
 
     virtual void send_to_shader(Shader &s, int index) = 0;
-    virtual void drawInspector() = 0;
+    virtual void drawInspector(Camera *camera) = 0;
 };
 
 class DirectionalLight : public Light
@@ -80,7 +78,7 @@ public:
         s.uniform_data(std::string("dirLights[").append(std::to_string(index)).append("].specular"), specular[0], specular[1], specular[2], specular[3]);
     };
 
-    void drawInspector() override
+    void drawInspector(Camera *camera) override
     {
         if(ImGui::TreeNode(std::string("DirLight" + std::to_string(numberOfLights)).c_str()))
         {
@@ -128,7 +126,7 @@ public:
         s.uniform_data(std::string("pointLights[").append(std::to_string(index)).append("].quadratic"), quadratic);
     };
 
-    void drawInspector() override
+    void drawInspector(Camera *camera) override
     {
         if(ImGui::TreeNode(std::string("PointLight" + std::to_string(numberOfLights)).c_str()))
         {

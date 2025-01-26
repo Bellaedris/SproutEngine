@@ -20,21 +20,49 @@ void Entity::UpdatePosition(const glm::vec3& position)
     m_transform.computeModelMatrix();
 }
 
-void Entity::drawInspector() {
+void Entity::drawInspector(Camera *camera)
+{
     if(ImGui::TreeNode(m_name.c_str()))
     {
-        if(ImGui::InputFloat3("Position", glm::value_ptr(m_transform.m_pos)))
-        {
-            m_transform.computeModelMatrix();
-        }
-        if(ImGui::InputFloat3("Rotation", glm::value_ptr(m_transform.m_eulerRot)))
-        {
-            m_transform.computeModelMatrix();
-        }
-        if(ImGui::InputFloat3("Scale", glm::value_ptr(m_transform.m_scale)))
-        {
-            m_transform.computeModelMatrix();
-        }
+        static ImGuizmo::OPERATION currentOp(ImGuizmo::ROTATE);
+        if (ImGui::IsKeyPressed(ImGuiKey_W))
+            currentOp = ImGuizmo::TRANSLATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_E))
+            currentOp = ImGuizmo::ROTATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_R)) // r Key
+            currentOp = ImGuizmo::SCALE;
+
+        if (ImGui::RadioButton("Translate", currentOp == ImGuizmo::TRANSLATE))
+            currentOp = ImGuizmo::TRANSLATE;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Rotate", currentOp == ImGuizmo::ROTATE))
+            currentOp = ImGuizmo::ROTATE;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Scale", currentOp == ImGuizmo::SCALE))
+            currentOp = ImGuizmo::SCALE;
+
+        ImGui::InputFloat3("Position", glm::value_ptr(m_transform.m_pos));
+        ImGui::InputFloat3("Rotation", glm::value_ptr(m_transform.m_eulerRot));
+        ImGui::InputFloat3("Scale", glm::value_ptr(m_transform.m_scale));
+
+        ImGuizmo::RecomposeMatrixFromComponents(glm::value_ptr(m_transform.m_pos),
+                                                glm::value_ptr(m_transform.m_eulerRot),
+                                                glm::value_ptr(m_transform.m_scale),
+                                                glm::value_ptr(m_transform.getModelMatrix()));
+
+        ImGuizmo::Manipulate(glm::value_ptr(camera->view()),
+                             glm::value_ptr(camera->projection()),
+                             currentOp,
+                             ImGuizmo::MODE::WORLD,
+                             glm::value_ptr(m_transform.getModelMatrix()),
+                             nullptr,
+                             nullptr);
+
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(m_transform.getModelMatrix()),
+                                                glm::value_ptr(m_transform.m_pos),
+                                                glm::value_ptr(m_transform.m_eulerRot),
+                                                glm::value_ptr(m_transform.m_scale)
+                                                );
 
         ImGui::TreePop();
     }

@@ -18,5 +18,5 @@ protected:
 public:
     TonemappingPass(int width, int height, const char* vertShader, const char* fragShader);
     void render(Pass* input) override;
-    void drawInspector() override;
+    void drawInspector(Camera *camera) override;
 };

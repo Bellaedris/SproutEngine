@@ -5,7 +5,9 @@
 #pragma once
 
 #include <IMGUI/imgui.h>
+#include <IMGUI/ImGuizmo.h>
+#include "camera.h"
 
 class Inspectable {
-    virtual void drawInspector() = 0;
+    virtual void drawInspector(Camera *camera) = 0;
 };

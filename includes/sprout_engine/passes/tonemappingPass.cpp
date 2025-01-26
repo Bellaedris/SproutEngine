@@ -41,7 +41,7 @@ void TonemappingPass::render(Pass* input) {
 
 const char* tonemappingTechniques[] = {"Reinhardt", "ACES", "Filmic"};
 
-void TonemappingPass::drawInspector()
+void TonemappingPass::drawInspector(Camera *camera)
 {
     if(ImGui::TreeNode("Tonemapping"))
     {

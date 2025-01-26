@@ -27,7 +27,7 @@ public:
 
     void draw(Shader &p_shader);
     void draw(Shader &p_shader, const Frustum& p_frustum, const Transform& p_transform);
-    void drawInspector() override;
+    void drawInspector(Camera *camera) override;
 };
 
 

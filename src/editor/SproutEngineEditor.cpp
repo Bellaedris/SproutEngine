@@ -5,11 +5,8 @@
 #include <sprout_engine/SproutApp.h>
 
 #include <sprout_engine/light.h>
-#include <sprout_engine/skybox.h>
 #include <sprout_engine/entity.h>
 #include <sprout_engine/cubemapHDRI.h>
-
-#include <glm/glm.hpp>
 
 #include <vector>
 #include "sprout_engine/passes/ColorPass.h"
@@ -89,6 +86,7 @@ public:
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
 
         // menu at the top of the window
         if(ImGui::BeginMainMenuBar())
@@ -161,15 +159,17 @@ public:
         // general settings
         ImGui::Begin("Rendering");
         for(auto& technique : m_PPtechniques)
-            technique->drawInspector();
+            technique->drawInspector(mainCamera);
         ImGui::End();
 
         ImGui::Begin("Inspector");
+            ImGuiIO& io = ImGui::GetIO();
+            ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
             for(auto& entity : m_entities)
-                entity.drawInspector();
+                entity.drawInspector(mainCamera);
         ImGui::End();
 
-        ImGui::Begin("Performances", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
+        ImGui::Begin("Performances", nullptr,  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
             ImGui::Text("SproutEngine version 0.0.1");
             ImGui::Text("OpenGL%s", api);
             ImGui::Text("%s %s", vendor, gpu);

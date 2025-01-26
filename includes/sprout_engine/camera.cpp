@@ -169,26 +169,27 @@ glm::vec3 Camera::getRight() const
     return right;
 }
 
-void Camera::drawInspector() {
-    if(ImGui::TreeNode(std::string("Camera" + std::to_string(currentId)).c_str()))
-    {
-        if(ImGui::InputFloat3("Position", glm::value_ptr(pos)))
-        {
-            update_dir();
-        }
-        if (ImGui::InputFloat("Pitch", &pitch))
-        {
-            update_dir();
-        }
-        if (ImGui::InputFloat("Yaw", &yaw))
-        {
-            update_dir();
-        }
-        if (ImGui::InputFloat("FoV", &m_fov))
-        {
-            updateProjection();
-        }
-        ImGui::InputFloat("Speed", &speed);
-        ImGui::TreePop();
-    }
-}
+//void Camera::drawInspector(const Camera &camera)
+//{
+//    if(ImGui::TreeNode(std::string("Camera" + std::to_string(currentId)).c_str()))
+//    {
+//        if(ImGui::InputFloat3("Position", glm::value_ptr(pos)))
+//        {
+//            update_dir();
+//        }
+//        if (ImGui::InputFloat("Pitch", &pitch))
+//        {
+//            update_dir();
+//        }
+//        if (ImGui::InputFloat("Yaw", &yaw))
+//        {
+//            update_dir();
+//        }
+//        if (ImGui::InputFloat("FoV", &m_fov))
+//        {
+//            updateProjection();
+//        }
+//        ImGui::InputFloat("Speed", &speed);
+//        ImGui::TreePop();
+//    }
+//}

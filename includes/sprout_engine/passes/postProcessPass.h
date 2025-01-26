@@ -15,5 +15,5 @@ public:
 
     PostProcessPass(int width, int height, const char* vertShader, const char* fragShader) : Pass(width, height), shader(vertShader, fragShader) {};
     virtual void render(Pass* input) = 0;
-    void drawInspector() override = 0;
+    void drawInspector(Camera *camera) override = 0;
 };

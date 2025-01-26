@@ -38,7 +38,7 @@ void ChromaticAberrationPass::render(Pass* input) {
     m_bIsFinal = false;
 }
 
-void ChromaticAberrationPass::drawInspector()
+void ChromaticAberrationPass::drawInspector(Camera *camera)
 {
     if(ImGui::TreeNode("Chromatic Aberration"))
     {

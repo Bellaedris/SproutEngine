@@ -87,6 +87,11 @@ public:
 		return m_model;
 	}
 
+    glm::mat4& getModelMatrix()
+    {
+        return m_model;
+    }
+
 	glm::vec3 getRight() const
 	{
 		return m_model[0];
