@@ -17,6 +17,10 @@ protected:
 	Window window;
 	Camera* mainCamera;
 
+    const GLubyte* vendor; // GPU vendor
+    const GLubyte* gpu; // GPU model
+    const GLubyte* api;
+
     int m_width, m_height;
 
 	float delta_time;
@@ -27,7 +31,7 @@ protected:
 	std::chrono::high_resolution_clock::time_point frame_begin;
 	std::chrono::high_resolution_clock::time_point frame_end;
 	GLuint frame_time_gpu;
-	int cpu_last_frame = 0;
+	float cpu_last_frame = 0;
 	GLint64 gpu_last_frame = 0;
 
 	// mouse movement control

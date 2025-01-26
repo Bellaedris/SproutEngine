@@ -20,6 +20,10 @@ SproutApp::SproutApp(int width, int height, int major, int minor)
 {
     window = create_window(width, height, major, minor);
 
+    vendor = glGetString(GL_VENDOR);
+    gpu = glGetString(GL_RENDERER);
+    api = glGetString(GL_VERSION);
+
     lastX = width / 2;
     lastY = height / 2;
 
@@ -83,6 +87,8 @@ int SproutApp::run() {
         delta_time = current_time - last_frame;
         last_frame = current_time;
 
+        glfwGetFramebufferSize(window, &m_width, &m_height);
+
         frame_begin = std::chrono::high_resolution_clock::now();
         timeSinceStartup = std::chrono::duration<float>(frame_begin - start_time).count();
         glBeginQuery(GL_TIME_ELAPSED, frame_time_gpu);
@@ -98,7 +104,7 @@ int SproutApp::run() {
         frame_end = std::chrono::high_resolution_clock::now();
         cpu_last_frame = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_begin).count();
         glEndQuery(GL_TIME_ELAPSED);
-        glGetQueryObjecti64v(frame_time_gpu, GL_QUERY_RESULT, &gpu_last_frame);
+        glGetQueryObjecti64v(frame_time_gpu, GL_QUERY_RESULT, &gpu_last_frame); // should be changed, synchronizes GPU with CPU...
 
         glfwSwapBuffers(window);
         glfwPollEvents();
