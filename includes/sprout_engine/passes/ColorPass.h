@@ -5,9 +5,9 @@
 #pragma once
 
 
-#include "pass.h"
+#include "drawPass.h"
 
-class ColorPass : public Pass
+class ColorPass : public DrawPass
 {
 protected:
     Texture m_depthTexture;

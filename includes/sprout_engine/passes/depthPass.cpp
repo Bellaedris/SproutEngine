@@ -5,7 +5,7 @@
 #include "depthPass.h"
 
 DepthPass::DepthPass(int width, int height)
-    : Pass(width, height)
+    : DrawPass(width, height)
 {
     m_texture = Texture::buildDepthTexture(width, height);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_texture.handle(), 0);

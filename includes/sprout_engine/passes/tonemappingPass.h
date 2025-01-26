@@ -4,14 +4,19 @@
 
 #pragma once
 
+#include "postProcessPass.h"
 
-#include "pass.h"
-
-class TonemappingPass : public Pass
+class TonemappingPass : public PostProcessPass
 {
 protected:
     Mesh m_renderQuad;
+
+    float gamma{2.2f};
+    float exposure{1.f};
+    int technique{1};
+
 public:
-    TonemappingPass(int width, int height);
-    void render(std::vector<Entity> &entities, const Camera &camera, Shader &shader) override;
+    TonemappingPass(int width, int height, const char* vertShader, const char* fragShader);
+    void render(Pass* input) override;
+    void drawInspector() override;
 };

@@ -3,13 +3,12 @@
 //
 
 #include "sprout_engine/texture.h"
-#include "pass.h"
+#include "drawPass.h"
 
-class DepthPass : public Pass
+class DepthPass : public DrawPass
 {
 protected:
     float m_orthographicZoom;
-
 
 public:
     DepthPass(int width, int height);

@@ -5,7 +5,7 @@
 #include "ColorPass.h"
 
 ColorPass::ColorPass(int width, int height)
-    : Pass(width, height)
+    : DrawPass(width, height)
 {
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
