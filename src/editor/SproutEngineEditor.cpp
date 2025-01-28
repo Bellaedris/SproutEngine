@@ -13,6 +13,7 @@
 #include "sprout_engine/passes/tonemappingPass.h"
 #include "sprout_engine/buffer.h"
 #include "sprout_engine/passes/ChromaticAberrationPass.h"
+#include "sprout_engine/passes/filmGrainPass.h"
 
 std::string resources_path = "../../resources/";
 
@@ -45,6 +46,7 @@ public:
         m_colorPass = std::make_unique<ColorPass>(m_width, m_height);
         m_PPtechniques.emplace_back(std::make_unique<TonemappingPass>(m_width, m_height, "postprocess.vs", "tonemapping.fs"));
         m_PPtechniques.emplace_back(std::make_unique<ChromaticAberrationPass>(m_width, m_height, "postprocess.vs", "chromaticAberration.fs"));
+        m_PPtechniques.emplace_back(std::make_unique<FilmGrainPass>(m_width, m_height, "postprocess.vs", "filmGrain.fs"));
 
         m_pointLights =
                 {
@@ -138,23 +140,28 @@ public:
 
         // Post process
         // first, set the last active technique as final
-        for(size_t i = m_PPtechniques.size() - 1; i >= 0; i--)
+        bool hasActivePostProcess{};
+        for(int i = m_PPtechniques.size() - 1; i >= 0; i--)
         {
             if(m_PPtechniques[i]->isActive)
             {
                 m_PPtechniques[i]->m_bIsFinal = true;
+                hasActivePostProcess = true;
                 break;
             }
         }
 
-        // then apply post processing
-        for(const auto& technique : m_PPtechniques)
-        {
-            if(!technique->isActive)
-                continue;
-            technique->render(lastTechnique);
-            lastTechnique = technique.get();
-        }
+        // then apply post processing, or just the color pass if no technique is active
+        if(!hasActivePostProcess)
+            m_colorPass->blitToScreen();
+        else
+            for(const auto& technique : m_PPtechniques)
+            {
+                if(!technique->isActive)
+                    continue;
+                technique->render(lastTechnique);
+                lastTechnique = technique.get();
+            }
 
         // general settings
         ImGui::Begin("Rendering");
