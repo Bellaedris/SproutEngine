@@ -31,6 +31,19 @@ public:
         std::cout << "Loading asset..." << std::endl;
     }
 
+    void addLight(int type)
+    {
+        switch (type)
+        {
+            case 1:
+                m_dirLights.emplace_back();
+                break;
+            case 2:
+                m_pointLights.emplace_back();
+                break;
+        }
+    }
+
     int init() override
     {
         playerCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
@@ -39,9 +52,7 @@ public:
         m_entities.emplace_back(resources_path + "models/DamagedHelmet/DamagedHelmet.gltf", "helmet", false);
 
         s = Shader("PBR.vs", "PBR.fs");
-        s_post_process = Shader("postprocess.vs", "postprocess.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
-        s_tonemapping = Shader("tonemapping.vs", "tonemapping.fs");
 
         m_colorPass = std::make_unique<ColorPass>(m_width, m_height);
         m_PPtechniques.emplace_back(std::make_unique<TonemappingPass>(m_width, m_height, "postprocess.vs", "tonemapping.fs"));
@@ -51,20 +62,16 @@ public:
         m_pointLights =
                 {
                         {
+                                {1., 1., 1.},
                                 {1., 1., 1., 1.},
-                                {1., 1., 1., 1.},
-                                {0., 1., 0., 1.},
-                                {1., 1., 1., 1.}
                         }
                 };
 
         m_dirLights =
                 {
                         {
-                                {0., 1., 0., 1.},
+                                {0., 1., 0.},
                                 {1., 1., 1., 1.},
-                                {1., 1., 1., 1.},
-                                {1., 1., 1., 1.}
                         }
                 };
 
@@ -97,6 +104,20 @@ public:
             {
                 if(ImGui::MenuItem("Load model", NULL))
                     loadAsset();
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Assets"))
+            {
+                if(ImGui::MenuItem("Load model", NULL))
+                    loadAsset();
+                if(ImGui::BeginMenu("Lights"))
+                {
+                    if (ImGui::MenuItem("Directionnal light", NULL))
+                        addLight(1);
+                    if (ImGui::MenuItem("Point light", NULL))
+                        addLight(2);
+                    ImGui::EndMenu();
+                }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Debug"))
@@ -174,6 +195,18 @@ public:
             ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
             for(auto& entity : m_entities)
                 entity.drawInspector(mainCamera);
+            for(int i = 0; i < m_dirLights.size(); i++)
+            {
+                ImGui::PushID(i);
+                m_dirLights[i].drawInspector(mainCamera);
+                ImGui::PopID();
+            }
+            for(int i = 0; i < m_pointLights.size(); i++)
+            {
+                ImGui::PushID(i);
+                m_pointLights[i].drawInspector(mainCamera);
+                ImGui::PopID();
+            }
         ImGui::End();
 
         ImGui::Begin("Performances", nullptr,  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
@@ -217,15 +250,10 @@ public:
 
 protected:
     std::vector<Entity> m_entities;
-    Shader s, s_post_process, s_skybox, s_tonemapping;
+    Shader s, s_skybox;
     Camera playerCamera;
     HDRCubemap m_skybox;
 
-    GLuint fbo;
-    Texture fbo_texture;
-    Texture fbo_depth;
-    unsigned int quad_vao;
-    unsigned int quad_buffer;
     std::vector<PointLight> m_pointLights;
     std::vector<DirectionalLight> m_dirLights;
 
@@ -234,9 +262,7 @@ protected:
 
     // imgui inputs
     float gamma = 2.2f;
-    float exposure = 1.f;
     bool wireframe_mode = false;
-    bool noPostProcess = false;
     bool drawSkybox = true;
 
     //framerate management

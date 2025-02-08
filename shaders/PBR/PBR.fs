@@ -73,11 +73,9 @@ float SmithGGX(in vec3 normal, in vec3 viewDir, in vec3 lightDir, in float rough
 
 struct DirectionalLight
 {
-	vec4 direction;
-
-	vec4 ambiant;
-	vec4 diffuse;
-	vec4 specular;
+	vec3 direction;
+	float intensity;
+	vec4 color;
 };
 uniform DirectionalLight dirLights[10];
 uniform int dirLightsNumber;
@@ -88,10 +86,10 @@ vec3 calculateDirectionalLight(vec3 viewDir, SurfaceParameter surface)
 	for(int i = 0; i < dirLightsNumber; i++)
 	{
 		DirectionalLight light = dirLights[i];
-		vec3 L = normalize(-light.direction.xyz);
+		vec3 L = normalize(-light.direction);
 		vec3 H = normalize(L + viewDir);
 
-		vec3 radiance = light.diffuse.xyz;
+		vec3 radiance = light.color.xyz * light.intensity;
 
 		float cosTheta = max(dot(viewDir, H), 0);
 
@@ -116,15 +114,9 @@ vec3 calculateDirectionalLight(vec3 viewDir, SurfaceParameter surface)
 
 struct PointLight
 {
-	vec4 position;
-
-	vec4 ambiant;
-	vec4 diffuse;
-	vec4 specular;
-
-	float constant;
-	float linear;
-	float quadratic;
+	vec3 position;
+	float intensity;
+	vec4 color;
 };
 
 //layout(std140, binding = 1) uniform pointLightsData
@@ -140,12 +132,12 @@ vec3 calculatePointLight(vec3 viewDir, SurfaceParameter surface)
 	for(int i = 0; i < pointLightsNumber; i++)
 	{
 		PointLight light = pointLights[i];
-		vec3 L = normalize(light.position.xyz - position.xyz);
+		vec3 L = normalize(light.position - position.xyz);
 		vec3 H = normalize(L + viewDir);
 
-		float dist = length(light.position.xyz - position.xyz);
+		float dist = length(light.position - position.xyz);
 		float attenuation = 1.f / (dist * dist);
-		vec3 radiance = light.diffuse.xyz * attenuation;
+		vec3 radiance = light.color.xyz * attenuation * light.intensity;
 
 		float cosTheta = max(dot(viewDir, H), 0);
 

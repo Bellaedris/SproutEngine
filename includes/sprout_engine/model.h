@@ -32,5 +32,4 @@ public:
 	void drawAABB(Shader& s, const glm::mat3& transform, const glm::vec3& translation);
 
 	void draw_debug_frustum(Shader& s, const Frustum& frustum, const Transform& transform);
-	;
 };
