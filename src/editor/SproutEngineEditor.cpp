@@ -14,6 +14,7 @@
 #include "sprout_engine/buffer.h"
 #include "sprout_engine/passes/ChromaticAberrationPass.h"
 #include "sprout_engine/passes/filmGrainPass.h"
+#include "IMGUI/ImGuiFileDialog.h"
 
 std::string resources_path = "../../resources/";
 
@@ -28,7 +29,30 @@ public:
 
     void loadAsset()
     {
-        std::cout << "Loading asset..." << std::endl;
+        IGFD::FileDialogConfig config;
+        config.path = "../../resources";
+        ImGuiFileDialog::Instance()->OpenDialog(
+                "ChooseFileDlgKey",
+                "Open 3D File",
+                ".gltf,.glb,.obj,.fbx",
+                config
+        );
+
+        // display
+        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+        {
+            if (ImGuiFileDialog::Instance()->IsOk())
+            { // action if OK
+                std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+                // action
+                m_entities.emplace_back(filePathName, "");
+                pickingFile = false;
+            }
+
+            // close
+            ImGuiFileDialog::Instance()->Close();
+        }
     }
 
     void addLight(int type)
@@ -49,7 +73,7 @@ public:
         playerCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
         setActiveCamera(&playerCamera);
 
-        m_entities.emplace_back(resources_path + "models/DamagedHelmet/DamagedHelmet.gltf", "helmet", false);
+        m_entities.emplace_back(resources_path + "models/Sponza/glTF/Sponza.gltf", "helmet", false);
 
         s = Shader("PBR.vs", "PBR.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
@@ -70,7 +94,7 @@ public:
         m_dirLights =
                 {
                         {
-                                {0., 1., 0.},
+                                {0., -1., 0.},
                                 {1., 1., 1., 1.},
                         }
                 };
@@ -108,8 +132,7 @@ public:
             }
             if (ImGui::BeginMenu("Assets"))
             {
-                if(ImGui::MenuItem("Load model", NULL))
-                    loadAsset();
+                ImGui::MenuItem("Load model", nullptr, &pickingFile);
                 if(ImGui::BeginMenu("Lights"))
                 {
                     if (ImGui::MenuItem("Directionnal light", NULL))
@@ -207,6 +230,10 @@ public:
                 m_pointLights[i].drawInspector(mainCamera);
                 ImGui::PopID();
             }
+            if(pickingFile)
+            {
+                loadAsset();
+            }
         ImGui::End();
 
         ImGui::Begin("Performances", nullptr,  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
@@ -264,6 +291,7 @@ protected:
     float gamma = 2.2f;
     bool wireframe_mode = false;
     bool drawSkybox = true;
+    bool pickingFile = false;
 
     //framerate management
     float framerate[100] = {};

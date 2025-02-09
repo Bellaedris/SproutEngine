@@ -10,6 +10,8 @@
 #include <vector>
 
 #include <assimp/aabb.h>
+#include <set>
+#include <unordered_set>
 
 class Mesh
 {
@@ -181,13 +183,25 @@ public:
             s.uniform_data("mat.diffuse", m_material.diffuse);
         }
         else {
+            std::unordered_set<std::string> types {"texture_diffuse", "texture_diffuse", "texture_roughnessMetalness", "texture_normals", "texture_emissive", "texture_ao"};
             //render using the available textures
             s.uniform_data("has_texture", 0);
             for (int i = 0; i < m_textures.size(); i++) {
                 std::string name = m_textures[i].type;
+                types.erase(name);
 
                 m_textures[i].use(GL_TEXTURE0 + i);
                 s.uniform_data(name, i); // give the correct location to each texture
+            }
+            for(const auto& type : types)
+                s.uniform_data(type, -1); // deactivate unused texture types
+
+            // deactivate all texture units that are not present. Since we only have 6 texture targets, it is simple,
+            // but will have to move if more textures appear
+            for(int i = m_textures.size(); i < 6; i++)
+            {
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, 0);
             }
             glActiveTexture(GL_TEXTURE0);
         }

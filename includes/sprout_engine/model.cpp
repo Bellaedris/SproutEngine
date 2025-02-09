@@ -127,7 +127,7 @@ Model::Model(const std::string& path, bool flip_uv) {
         return;
     }
 
-    directory = path.substr(0, path.find_last_of('/'));
+    directory = path.substr(0, path.find_last_of("/\\"));
 
     processNode(scene->mRootNode, scene);
 }
