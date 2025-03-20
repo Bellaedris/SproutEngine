@@ -2,6 +2,7 @@
 // Created by Bellaedris on 28/04/2024.
 //
 
+#include <map>
 #include "model.h"
 
 void Model::processNode(const aiNode *node, const aiScene *scene) {
@@ -53,6 +54,22 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
     if (mesh->mMaterialIndex >= 0)
     {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
+
+        // try to read each PBRMaterial texture. If it has none, store either the material info or a default value
+        aiString diffusePath;
+        mat->GetTexture(aiTextureType_DIFFUSE, 0, &diffusePath);
+
+        aiString normalPath;
+        mat->GetTexture(aiTextureType_NORMALS, 0, &normalPath);
+
+        aiString metalroughnessPath;
+        mat->GetTexture(aiTextureType_GLTF_METALLIC_ROUGHNESS, 0, &metalroughnessPath);
+
+        aiString emissivePath;
+        mat->GetTexture(aiTextureType_EMISSION_COLOR, 0, &emissivePath);
+
+
+
         //if there is no diffuse texture, store a diffuse color
         if (mat->GetTextureCount(aiTextureType_DIFFUSE) < 1) {
             aiColor4D color;
