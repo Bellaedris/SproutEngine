@@ -9,7 +9,7 @@
 #include <sprout_engine/cubemapHDRI.h>
 
 #include <vector>
-#include "sprout_engine/passes/ColorPass.h"
+#include "sprout_engine/passes/forwardPass.h"
 #include "sprout_engine/passes/tonemappingPass.h"
 #include "sprout_engine/buffer.h"
 #include "sprout_engine/passes/ChromaticAberrationPass.h"
@@ -73,12 +73,12 @@ public:
         playerCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
         setActiveCamera(&playerCamera);
 
-        m_entities.emplace_back(resources_path + "models/Sponza/glTF/Sponza.gltf", "helmet", false);
+        m_entities.emplace_back(resources_path + "models/DamagedHelmet/DamagedHelmet.gltf", "helmet", false);
 
         s = Shader("PBR.vs", "PBR.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
 
-        m_colorPass = std::make_unique<ColorPass>(m_width, m_height);
+        m_colorPass = std::make_unique<ForwardPass>(m_width, m_height);
         m_PPtechniques.emplace_back(std::make_unique<TonemappingPass>(m_width, m_height, "postprocess.vs", "tonemapping.fs"));
         m_PPtechniques.emplace_back(std::make_unique<ChromaticAberrationPass>(m_width, m_height, "postprocess.vs", "chromaticAberration.fs"));
         m_PPtechniques.emplace_back(std::make_unique<FilmGrainPass>(m_width, m_height, "postprocess.vs", "filmGrain.fs"));
@@ -211,6 +211,11 @@ public:
         ImGui::Begin("Rendering");
         for(auto& technique : m_PPtechniques)
             technique->drawInspector(mainCamera);
+        if(ImGui::Button("Reload shaders"))
+        {
+            s = Shader("PBR.vs", "PBR.fs");
+            s_skybox = Shader("skybox.vs", "skybox.fs");
+        }
         ImGui::End();
 
         ImGui::Begin("Inspector");
@@ -285,7 +290,7 @@ protected:
     std::vector<DirectionalLight> m_dirLights;
 
     std::vector<std::unique_ptr<PostProcessPass>> m_PPtechniques;
-    std::unique_ptr<ColorPass> m_colorPass;
+    std::unique_ptr<ForwardPass> m_colorPass;
 
     // imgui inputs
     float gamma = 2.2f;

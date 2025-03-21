@@ -2,9 +2,9 @@
 // Created by Bellaedris on 26/12/2024.
 //
 
-#include "ColorPass.h"
+#include "forwardPass.h"
 
-ColorPass::ColorPass(int width, int height)
+ForwardPass::ForwardPass(int width, int height)
     : DrawPass(width, height)
 {
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -19,7 +19,7 @@ ColorPass::ColorPass(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.handle(), 0);
 }
 
-void ColorPass::render(std::vector<Entity> &entities, const Camera &camera, Shader &shader)
+void ForwardPass::render(std::vector<Entity> &entities, const Camera &camera, Shader &shader)
 {
     if(m_bIsFinal)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

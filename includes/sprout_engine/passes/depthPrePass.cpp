@@ -2,9 +2,9 @@
 // Created by Bellaedris on 23/12/2024.
 //
 
-#include "depthPass.h"
+#include "depthPrePass.h"
 
-DepthPass::DepthPass(int width, int height)
+DepthPrePass::DepthPrePass(int width, int height)
     : DrawPass(width, height)
 {
     m_texture = Texture::buildDepthTexture(width, height);
@@ -13,7 +13,7 @@ DepthPass::DepthPass(int width, int height)
     glReadBuffer(GL_NONE);
 }
 
-void DepthPass::render(std::vector<Entity> &entities, const Camera &camera, Shader &shader)
+void DepthPrePass::render(std::vector<Entity> &entities, const Camera &camera, Shader &shader)
 {
     //draw the scene from the light pov
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer);

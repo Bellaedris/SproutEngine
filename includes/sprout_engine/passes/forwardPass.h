@@ -7,11 +7,11 @@
 
 #include "drawPass.h"
 
-class ColorPass : public DrawPass
+class ForwardPass : public DrawPass
 {
 protected:
     Texture m_depthTexture;
 public:
-    ColorPass(int width, int height);
+    ForwardPass(int width, int height);
     void render(std::vector<Entity> &entities, const Camera &camera, Shader &shader) override;
 };
