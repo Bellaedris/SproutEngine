@@ -5,6 +5,7 @@
 #include "camera.h"
 #include "bounds.h"
 #include "material.h"
+#include "PBRMaterial.h"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -25,6 +26,7 @@ protected:
 	std::vector<unsigned int> m_indices;
 	std::vector<Texture> m_textures;
     Material m_material;
+    PBRMaterialPtr m_pbrMat;
 
 	AABB aabb;
 
@@ -50,7 +52,33 @@ public:
 		glGenBuffers(1, &index_buffer);
 	};
 
-// read a Mesh from file
+    Mesh(
+            const std::vector<glm::vec3> &vertices,
+            const std::vector<glm::vec3>& normals,
+            const std::vector<glm::vec2>& texcoords,
+            const std::vector<glm::vec4>& colors,
+            const std::vector<unsigned int> &indices,
+            const std::vector<Texture> &textures,
+            const PBRMaterialPtr& material,
+            const aiAABB &in_aabb
+    )
+            : update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_colors(colors), m_indices(indices), m_textures(textures), m_pbrMat(material)
+    {
+        // Mesh buffers/vao
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &buffer);
+        glGenBuffers(1, &index_buffer);
+
+        computeBitengants();
+        build_buffer();
+
+        //init AABB
+        aabb = AABB(glm::vec3(in_aabb.mMin.x, in_aabb.mMin.y, in_aabb.mMin.z), glm::vec3(in_aabb.mMax.x, in_aabb.mMax.y, in_aabb.mMax.z));
+
+        glBindVertexArray(0);
+    };
+
+    // read a Mesh from file. Uses simpler material for RT workflow.
 	Mesh(
             const std::vector<glm::vec3> &vertices,
             const std::vector<glm::vec3>& normals,

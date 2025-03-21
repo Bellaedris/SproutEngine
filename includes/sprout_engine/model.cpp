@@ -4,6 +4,8 @@
 
 #include <map>
 #include "model.h"
+#include "PBRMaterial.h"
+#include "resourcesManager.h"
 
 void Model::processNode(const aiNode *node, const aiScene *scene) {
     for (int i = 0; i < node->mNumMeshes; i++)
@@ -50,10 +52,15 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
             indices.push_back(face.mIndices[j]);
     }
 
+    PBRMaterialPtr meshMaterial;
     // process textures
     if (mesh->mMaterialIndex >= 0)
     {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
+        std::string path = directory + "/";
+
+        aiString name;
+        mat->Get(AI_MATKEY_NAME, name);
 
         // try to read each PBRMaterial texture. If it has none, store either the material info or a default value
         aiString diffusePath;
@@ -63,12 +70,22 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
         mat->GetTexture(aiTextureType_NORMALS, 0, &normalPath);
 
         aiString metalroughnessPath;
-        mat->GetTexture(aiTextureType_GLTF_METALLIC_ROUGHNESS, 0, &metalroughnessPath);
+        mat->GetTexture(aiTextureType_UNKNOWN, 0, &metalroughnessPath); // metalRough are still packed in unknown...
+
+        aiString aoPath;
+        mat->GetTexture(aiTextureType_LIGHTMAP, 0, &aoPath);
 
         aiString emissivePath;
-        mat->GetTexture(aiTextureType_EMISSION_COLOR, 0, &emissivePath);
+        mat->GetTexture(aiTextureType_EMISSIVE, 0, &emissivePath);
 
-
+        std::array<std::string, 5> materialTextures = {
+                path + diffusePath.C_Str(),
+                path + normalPath.C_Str(),
+                path + metalroughnessPath.C_Str(),
+                path + aoPath.C_Str(),
+                path + emissivePath.C_Str()
+        };
+        meshMaterial = ResourcesManager::GetInstance()->cacheMaterial(name.C_Str(), materialTextures);
 
         //if there is no diffuse texture, store a diffuse color
         if (mat->GetTextureCount(aiTextureType_DIFFUSE) < 1) {
@@ -97,7 +114,7 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
 
     }
 
-    return {positions, normals, texcoords, colors, indices, textures, material, mesh->mAABB};
+    return {positions, normals, texcoords, colors, indices, textures, meshMaterial, mesh->mAABB};
 }
 
 std::vector<Texture> Model::loadMaterialTexture(const aiMaterial *mat, aiTextureType type, std::string type_name) {

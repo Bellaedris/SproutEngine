@@ -240,3 +240,5 @@ public:
 
 
 };
+
+using TexturePtr = std::shared_ptr<Texture>;
