@@ -24,7 +24,6 @@ protected:
     std::vector<glm::vec3> m_tangents;
     std::vector<glm::vec3> m_bitangents;
 	std::vector<unsigned int> m_indices;
-	std::vector<Texture> m_textures;
     Material m_material;
     PBRMaterialPtr m_pbrMat;
 
@@ -58,11 +57,10 @@ public:
             const std::vector<glm::vec2>& texcoords,
             const std::vector<glm::vec4>& colors,
             const std::vector<unsigned int> &indices,
-            const std::vector<Texture> &textures,
             const PBRMaterialPtr& material,
             const aiAABB &in_aabb
     )
-            : update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_colors(colors), m_indices(indices), m_textures(textures), m_pbrMat(material)
+            : update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_colors(colors), m_indices(indices), m_pbrMat(material)
     {
         // Mesh buffers/vao
         glGenVertexArrays(1, &vao);
@@ -85,11 +83,10 @@ public:
             const std::vector<glm::vec2>& texcoords,
             const std::vector<glm::vec4>& colors,
             const std::vector<unsigned int> &indices,
-            const std::vector<Texture> &textures,
             const Material& material,
             const aiAABB &in_aabb
             )
-		: update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_colors(colors), m_indices(indices), m_textures(textures), m_material(material)
+		: update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_colors(colors), m_indices(indices), m_material(material)
 	{
 		// Mesh buffers/vao
 		glGenVertexArrays(1, &vao);
@@ -204,35 +201,18 @@ public:
 
 		s.use();
 
-        // if there is no texture, use the material
-        if (m_textures.empty())
-        {
-            s.uniform_data("has_texture", 1);
-            s.uniform_data("mat.diffuse", m_material.diffuse);
-        }
-        else {
-            std::unordered_set<std::string> types {"texture_diffuse", "texture_diffuse", "texture_roughnessMetalness", "texture_normals", "texture_emissive", "texture_ao"};
-            //render using the available textures
-            s.uniform_data("has_texture", 0);
-            for (int i = 0; i < m_textures.size(); i++) {
-                std::string name = m_textures[i].type;
-                types.erase(name);
+        // TODO if there is no texture, use the material
 
-                m_textures[i].use(GL_TEXTURE0 + i);
-                s.uniform_data(name, i); // give the correct location to each texture
-            }
-            for(const auto& type : types)
-                s.uniform_data(type, -1); // deactivate unused texture types
-
-            // deactivate all texture units that are not present. Since we only have 6 texture targets, it is simple,
-            // but will have to move if more textures appear
-            for(int i = m_textures.size(); i < 6; i++)
-            {
-                glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, 0);
-            }
-            glActiveTexture(GL_TEXTURE0);
+        // the parameters as they are in the shader
+        std::vector<std::string> types {"texture_diffuse", "texture_normals", "texture_roughnessMetalness", "texture_ao", "texture_emissive"};
+        //render using the available textures
+        s.uniform_data("has_texture", 0);
+        for (int i = 0; i < m_pbrMat->TEXTURE_CHANNELS; i++) {
+            m_pbrMat->GetTexture(i)->use(GL_TEXTURE0 + i);
+            s.uniform_data(types[i], i); // give the correct location to each texture
         }
+
+        glActiveTexture(GL_TEXTURE0);
 
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);

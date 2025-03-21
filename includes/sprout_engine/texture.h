@@ -182,9 +182,15 @@ public:
 		             GL_FLOAT, NULL);
 	}
 
+    void init()
+    {
+        glGenTextures(1, &id);
+    }
+
     static Texture buildDepthTexture(int width, int height)
     {
         Texture t;
+        t.init();
         glBindTexture(GL_TEXTURE_2D, t.handle());
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
@@ -200,9 +206,31 @@ public:
         return t;
     }
 
+    /**
+     * \brief Constructs a default 1x1 texture with a black pixel. Used to handle cases where a material lacks a texture
+     * \return a texture object
+     */
+    static Texture buildDefaultTexture()
+    {
+        Texture t;
+        t.init();
+        glBindTexture(GL_TEXTURE_2D, t.handle());
+
+        std::vector<unsigned char> data = {0, 0, 0};
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, data.data());
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+        return t;
+    }
+
     static Texture loadHDRTexture(const char* path)
     {
         Texture t;
+        t.init();
         int width, height, nbChan;
         stbi_set_flip_vertically_on_load(true);
         float* data = stbi_loadf(path, &width, &height, &nbChan, 0);

@@ -15,8 +15,12 @@ class ResourcesManager
 private:
     static ResourcesManager* m_instance;
 
+    // stores all textures/materials loaded by the app
     std::map<std::string, TexturePtr> m_textureCache {};
     std::map<std::string, PBRMaterialPtr> m_materialCache {};
+
+    // default texture used as a fallback option when nothing is provided
+    TexturePtr m_defaultTexture;
 
 public:
     ResourcesManager() = default;
@@ -25,7 +29,8 @@ public:
 
     static ResourcesManager* GetInstance();
 
-    TexturePtr cacheTexture(const std::string& texturePath);
+    TexturePtr cacheTexture(const std::string &path, const std::string &textureName, bool useSRGB);
 
-    PBRMaterialPtr cacheMaterial(const std::string& name, const std::array<std::string, 5>& texturePaths);
+    PBRMaterialPtr
+    cacheMaterial(const std::string &path, const std::string &name, const std::array<std::string, 5> &texturePaths);
 };

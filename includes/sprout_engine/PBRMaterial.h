@@ -16,7 +16,11 @@ private:
     std::string m_name{};
 
 public:
-    PBRMaterial(std::string name, const std::array<std::string, 5>& texturePaths);
+    PBRMaterial(
+            const std::string &path,
+            const std::string &name,
+            const std::array<std::string, 5> &texturePaths
+    );
 
     TexturePtr GetTexture(int index);
 
