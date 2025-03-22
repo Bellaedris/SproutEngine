@@ -19,11 +19,11 @@ void main()
 
 	//float dist_from_center = fadeFromCenter == 0 ? 1 : distance(gl_FragCoord.xy / size, vec2(.5, .5));
 
-	vec2 direction = texcoord - vec2(.5, .5);
+	vec2 direction = fadeFromCenter == 1 ? texcoord - vec2(.5, .5) : texcoord;
 
-	float r = texture(framebuffer, texcoord + vec2(redOffset) * direction).r;
-	float g = texture(framebuffer, texcoord + vec2(greenOffset) * direction).g;
-	float b = texture(framebuffer, texcoord + vec2(blueOffset) * direction).b;
+	float r = texture(framebuffer, texcoord + vec2(redOffset) * direction * strength).r;
+	float g = texture(framebuffer, texcoord + vec2(greenOffset) * direction * strength).g;
+	float b = texture(framebuffer, texcoord + vec2(blueOffset) * direction * strength).b;
 
 	FragColor = vec4(r, g, b, 1.);
 }
