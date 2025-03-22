@@ -35,7 +35,7 @@ protected:
 
 	bool update_data;
 
-    void computeBitengants();
+    void computeTengants();
 
     /**
 	 * \brief Builds the buffer containing the mesh data. Since data will have to go from CPU to GPU,
@@ -55,19 +55,21 @@ public:
             const std::vector<glm::vec3> &vertices,
             const std::vector<glm::vec3>& normals,
             const std::vector<glm::vec2>& texcoords,
+            const std::vector<glm::vec3>& tangents,
             const std::vector<glm::vec4>& colors,
             const std::vector<unsigned int> &indices,
             const PBRMaterialPtr& material,
             const aiAABB &in_aabb
     )
-            : update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_colors(colors), m_indices(indices), m_pbrMat(material)
+            : update_data(false), m_positions(vertices), m_normals(normals), m_texcoords(texcoords), m_tangents(tangents), m_colors(colors), m_indices(indices), m_pbrMat(material)
     {
         // Mesh buffers/vao
         glGenVertexArrays(1, &vao);
         glGenBuffers(1, &buffer);
         glGenBuffers(1, &index_buffer);
 
-        computeBitengants();
+        if(m_tangents.empty())
+            computeTengants();
         build_buffer();
 
         //init AABB
@@ -93,7 +95,7 @@ public:
 		glGenBuffers(1, &buffer);
 		glGenBuffers(1, &index_buffer);
 
-        computeBitengants();
+        computeTengants();
 		build_buffer();
 
 		//init AABB

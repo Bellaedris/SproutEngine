@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 
 #include <vector>
-#include "sprout_engine/passes/ColorPass.h"
+#include "sprout_engine/passes/forwardPass.h"
 #include "sprout_engine/passes/tonemappingPass.h"
 #include "sprout_engine/buffer.h"
 
@@ -31,7 +31,7 @@ public:
         s_skybox = Shader("skybox.vs", "skybox.fs");
         s_tonemapping = Shader("tonemapping.vs", "tonemapping.fs");
 
-        m_colorPass = std::make_unique<ColorPass>(m_width, m_height);
+        m_colorPass = std::make_unique<ForwardPass>(m_width, m_height);
         m_tonemappingPass = std::make_unique<TonemappingPass>(m_width, m_height);
         m_tonemappingPass->m_bIsFinal = true;
 
@@ -55,14 +55,6 @@ public:
             }
         };
 
-//         std::array<std::string, 6> cubemap = {
-//                 resources_path + "textures/skyboxes/right.bmp",
-//                 resources_path + "textures/skyboxes/left.bmp",
-//                 resources_path + "textures/skyboxes/bottom.bmp",
-//                 resources_path + "textures/skyboxes/top.bmp",
-//                 resources_path + "textures/skyboxes/front.bmp",
-//                 resources_path + "textures/skyboxes/back.bmp",
-//         };
          m_skybox = HDRCubemap(std::string(resources_path + "textures/skyboxes/lilienstein_4k.hdr").c_str());
 
         glEnable(GL_DEPTH_TEST);
@@ -83,21 +75,21 @@ public:
             ImGui::NewFrame();
             ImGui::Begin("Inspector");
             // mainCamera inspector
-            playerCamera.drawInspector();
+            playerCamera.drawInspector(<#initializer#>);
             for (auto &entity: m_entities)
-                entity.drawInspector();
+                entity.drawInspector(<#initializer#>);
             int i = 0;
             for(auto& pointLight : m_pointLights)
             {
                 PointLight::numberOfLights = i;
-                pointLight.drawInspector();
+                pointLight.drawInspector(<#initializer#>);
                 i++;
             }
             i = 0;
             for(auto& dirLight : m_dirLights)
             {
                 DirectionalLight::numberOfLights = i;
-                dirLight.drawInspector();
+                dirLight.drawInspector(<#initializer#>);
                 i++;
             }
             ImGui::End();
@@ -209,7 +201,7 @@ protected:
     std::vector<PointLight> m_pointLights;
     std::vector<DirectionalLight> m_dirLights;
 
-    std::unique_ptr<ColorPass> m_colorPass;
+    std::unique_ptr<ForwardPass> m_colorPass;
     std::unique_ptr<TonemappingPass> m_tonemappingPass;
 
     // imgui inputs

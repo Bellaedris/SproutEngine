@@ -12,10 +12,10 @@ in vec4 lightspacePos;
 in mat3 TBN;
 
 uniform sampler2D texture_diffuse;
-uniform sampler2D texture_roughnessMetalness;
 uniform sampler2D texture_normals;
-uniform sampler2D texture_emissive;
+uniform sampler2D texture_roughnessMetalness;
 uniform sampler2D texture_ao;
+uniform sampler2D texture_emissive;
 
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
@@ -216,7 +216,9 @@ uniform float gamma;
 
 void main()
 {
-	vec3 albedo = texture(texture_diffuse, texCoord).xyz;
+	vec4 color = texture(texture_diffuse, texCoord);
+	vec3 albedo = color.xyz;
+	float alpha = color.w;
 	vec3 emissive = texture(texture_emissive, texCoord).xyz;
 	float metalness = texture(texture_roughnessMetalness, texCoord).b;
 	float roughness = texture(texture_roughnessMetalness, texCoord).g;
@@ -263,5 +265,5 @@ void main()
 	finalColor += emissive;
 	finalColor = finalColor / (finalColor + vec3(1.f));
 
-	FragColor = vec4(finalColor, 1.f);
+	FragColor = vec4(finalColor, alpha);
 }

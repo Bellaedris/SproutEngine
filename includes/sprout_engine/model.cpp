@@ -8,6 +8,7 @@
 #include "resourcesManager.h"
 
 void Model::processNode(const aiNode *node, const aiScene *scene) {
+    #pragma omp parallel for
     for (int i = 0; i < node->mNumMeshes; i++)
     {
         meshes.push_back(
@@ -25,6 +26,7 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
     std::vector<glm::vec4> colors;
+    std::vector<glm::vec3> tangents;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
     Material material;
@@ -34,6 +36,7 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
     {
         positions.emplace_back(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
         normals.emplace_back(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+        tangents.emplace_back(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
 
         if (mesh->mColors[0])
             colors.emplace_back(mesh->mColors[i]->r, mesh->mColors[i]->g, mesh->mColors[i]->b, mesh->mColors[i]->a);
@@ -115,7 +118,7 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
 
     }
 
-    return {positions, normals, texcoords, colors, indices, meshMaterial, mesh->mAABB};
+    return {positions, normals, texcoords, tangents, colors, indices, meshMaterial, mesh->mAABB};
 }
 
 Model::Model(const std::string& path, bool flip_uv) {

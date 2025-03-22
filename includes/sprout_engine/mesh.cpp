@@ -94,9 +94,8 @@ void Mesh::draw_strip() {
     glBindVertexArray(0);
 }
 
-void Mesh::computeBitengants() {
+void Mesh::computeTengants() {
     m_tangents.resize(m_positions.size());
-    m_bitangents.resize(m_positions.size());
     for(int i = 0; i < m_indices.size(); i+=3)
     {
         int a = m_indices[i];
@@ -114,25 +113,14 @@ void Mesh::computeBitengants() {
         tan.y = f * (deltaUV2.y * e1.y - deltaUV1.y * e2.y);
         tan.z = f * (deltaUV2.y * e1.z - deltaUV1.y * e2.z);
 
-        bitan.x = f * (-deltaUV1.x * e1.x + deltaUV1.x * e2.x);
-        bitan.y = f * (-deltaUV1.x * e1.y + deltaUV1.x * e2.y);
-        bitan.z = f * (-deltaUV1.x * e1.z + deltaUV1.x * e2.z);
-
         m_tangents[a] += tan;
         m_tangents[b] += tan;
         m_tangents[c] += tan;
-
-        m_bitangents[a] += bitan;
-        m_bitangents[b] += bitan;
-        m_bitangents[c] += bitan;
     }
 
     //renormalize the bitangent and tangent vectors
     for(auto& tan : m_tangents)
         tan = glm::normalize(tan);
-
-    for(auto& bitan : m_bitangents)
-        bitan = glm::normalize(bitan);
 }
 
 void Mesh::build_buffer() {
@@ -171,12 +159,12 @@ void Mesh::build_buffer() {
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)offset);
     glEnableVertexAttribArray(3);
 
-    // bitangent
-    offset += size;
-    size = bitangent_buffer_size();
-    glBufferSubData(GL_ARRAY_BUFFER, offset, size, m_bitangents.data());
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (void*)offset);
-    glEnableVertexAttribArray(4);
+//    // bitangent
+//    offset += size;
+//    size = bitangent_buffer_size();
+//    glBufferSubData(GL_ARRAY_BUFFER, offset, size, m_bitangents.data());
+//    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (void*)offset);
+//    glEnableVertexAttribArray(4);
 
     //index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
