@@ -31,17 +31,18 @@ void ForwardPass::render(std::vector<Entity> &entities, const Camera &camera, Sh
 
     glm::mat4 view = camera.view();
     glm::mat4 projection = camera.projection();
+    glm::mat4 inverseViewMatrix = glm::inverse(view);
+
+    shader.uniform_data("viewMatrix", view);
+    shader.uniform_data("projectionMatrix", projection);
+    shader.uniform_data("inverseViewMatrix", inverseViewMatrix);
 
     for(auto& entity : entities) {
         glm::mat4 model = entity.getTransform().getModelMatrix();
 
         glm::mat4 normalMatrix = glm::transpose(glm::inverse(model));
-        glm::mat4 inverseViewMatrix = glm::inverse(view);
         shader.uniform_data("modelMatrix", model);
         shader.uniform_data("normalMatrix", normalMatrix);
-        shader.uniform_data("viewMatrix", view);
-        shader.uniform_data("projectionMatrix", projection);
-        shader.uniform_data("inverseViewMatrix", inverseViewMatrix);
 
         entity.draw(shader, camera.getFrustum(), entity.getTransform());
     }
