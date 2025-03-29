@@ -27,12 +27,15 @@ PBRMaterialPtr ResourcesManager::cacheMaterial(
         const std::array<std::string, 5> &texturePaths
 )
 {
+    auto fullName = path + name;
+    std::cout << fullName << std::endl;
+
     // cache the texture if it does not exists already
-    if(m_textureCache.find(name) == m_textureCache.end())
-        m_materialCache.emplace(name, std::make_shared<PBRMaterial>(path, name, texturePaths));
+    if(m_textureCache.find(fullName) == m_textureCache.end())
+        m_materialCache.emplace(fullName, std::make_shared<PBRMaterial>(path, name, texturePaths));
 
     // return the existing texture
-    return m_materialCache[name];
+    return m_materialCache[fullName];
 }
 
 ResourcesManager *ResourcesManager::GetInstance()

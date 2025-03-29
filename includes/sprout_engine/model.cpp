@@ -8,7 +8,7 @@
 #include "resourcesManager.h"
 
 void Model::processNode(const aiNode *node, const aiScene *scene) {
-    #pragma omp parallel for
+
     for (int i = 0; i < node->mNumMeshes; i++)
     {
         meshes.push_back(
@@ -64,6 +64,9 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
 
         aiString name;
         mat->Get(AI_MATKEY_NAME, name);
+        // if the mat is not named, use the index instead
+        if(strcmp(name.C_Str(), "") == 0)
+            name = aiString("material" + std::to_string(mesh->mMaterialIndex));
 
         // try to read each PBRMaterial texture. If it has none, store either the material info or a default value
         aiString diffusePath;
