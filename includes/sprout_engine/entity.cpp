@@ -11,7 +11,10 @@ Entity::Entity(const std::string& path, const std::string& name, bool flip_uv)
     , m_name(name)
 {
     if(name.empty())
-        m_name = path;
+    {
+        size_t nameBegin = path.find_last_of("/\\");
+        m_name = path.substr(nameBegin + 1, path.size() - nameBegin);
+    }
 }
 
 void Entity::UpdatePosition(const glm::vec3& position)
