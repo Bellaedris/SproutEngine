@@ -9,21 +9,18 @@
 class Model
 {
 protected:
-	std::vector<Mesh> meshes;
-	std::vector<Texture> loaded_textures;
+	std::vector<MeshPtr> meshes;
 	std::string directory;
 
 	void processNode(const aiNode *node, const aiScene *scene);
 
-	Mesh processMesh(const aiMesh *mesh, const aiScene *scene);
-
-	std::vector<Texture> loadMaterialTexture(const aiMaterial* mat, aiTextureType type, std::string type_name);
+	MeshPtr processMesh(const aiMesh *mesh, const aiScene *scene);
 
 public:
 	Model() = default;
 	explicit Model(const std::string& path, bool flip_uv = false);
 
-    const std::vector<Mesh>& getMeshes() const {return meshes;};
+    const std::vector<MeshPtr>& getMeshes() const {return meshes;};
 
 	void draw(Shader &s, const Frustum &f, const Transform &transform);
 

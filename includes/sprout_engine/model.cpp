@@ -21,7 +21,18 @@ void Model::processNode(const aiNode *node, const aiScene *scene) {
     }
 }
 
-Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
+MeshPtr Model::processMesh(const aiMesh *mesh, const aiScene *scene)
+{
+    std::string path = directory + "/";
+
+    // check if the mesh is cached before anything
+//    auto cachedMesh = ResourcesManager::GetInstance()->getMesh(path, mesh->mName.C_Str());
+//    if(cachedMesh.has_value())
+//    {
+//        std::cout << "Skipped cached mesh" << std::endl;
+//        return cachedMesh.value();
+//    }
+
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texcoords;
@@ -36,7 +47,6 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
     {
         positions.emplace_back(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
         normals.emplace_back(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-        tangents.emplace_back(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
 
         if (mesh->mColors[0])
             colors.emplace_back(mesh->mColors[i]->r, mesh->mColors[i]->g, mesh->mColors[i]->b, mesh->mColors[i]->a);
@@ -46,6 +56,11 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
         else
             texcoords.emplace_back(0.f, 0.f);
     }
+
+    // process Tangents, if necessary
+    if(mesh->HasTangentsAndBitangents())
+        for(int i = 0; i < mesh->mNumVertices; i++)
+            tangents.emplace_back(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
 
     //process indices
     for (int i = 0; i < mesh->mNumFaces; i++)
@@ -60,13 +75,19 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
     if (mesh->mMaterialIndex >= 0)
     {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
-        std::string path = directory + "/";
 
         aiString name;
         mat->Get(AI_MATKEY_NAME, name);
         // if the mat is not named, use the index instead
         if(strcmp(name.C_Str(), "") == 0)
             name = aiString("material" + std::to_string(mesh->mMaterialIndex));
+
+        const auto cached = ResourcesManager::GetInstance()->getMaterial(path, name.C_Str());
+        if(cached.has_value())
+        {
+            std::cout << "skipped cached material" << std::endl;
+            return std::make_shared<Mesh>(positions, normals, texcoords, tangents, colors, indices, cached.value(), mesh->mAABB);
+        }
 
         // try to read each PBRMaterial texture. If it has none, store either the material info or a default value
         aiString diffusePath;
@@ -121,7 +142,7 @@ Mesh Model::processMesh(const aiMesh *mesh, const aiScene *scene) {
 
     }
 
-    return {positions, normals, texcoords, tangents, colors, indices, meshMaterial, mesh->mAABB};
+    return std::make_shared<Mesh>(positions, normals, texcoords, tangents, colors, indices, meshMaterial, mesh->mAABB);
 }
 
 Model::Model(const std::string& path, bool flip_uv) {
@@ -143,29 +164,29 @@ Model::Model(const std::string& path, bool flip_uv) {
 }
 
 void Model::draw(Shader &s, const Frustum &f, const Transform &transform) {
-    for (Mesh& m : meshes)
+    for (MeshPtr& m : meshes)
     {
-        m.draw(s, f, transform);
+        m->draw(s, f, transform);
     }
 }
 
 void Model::draw(Shader &s) {
-    for (Mesh& m : meshes)
+    for (MeshPtr& m : meshes)
     {
-        m.draw(s);
+        m->draw(s);
     }
 }
 
 void Model::drawAABB(Shader &s, const mat3 &transform, const vec3 &translation) {
-    for (Mesh& m : meshes)
+    for (MeshPtr& m : meshes)
     {
         //m.drawAABB(s, transform, translation);
     }
 }
 
 void Model::draw_debug_frustum(Shader &s, const Frustum &frustum, const Transform &transform) {
-    for (Mesh& m : meshes)
+    for (MeshPtr& m : meshes)
     {
-        m.draw_debug_frustum(s, frustum, transform);
+        m->draw_debug_frustum(s, frustum, transform);
     }
 }
