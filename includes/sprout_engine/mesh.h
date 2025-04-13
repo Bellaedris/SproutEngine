@@ -210,7 +210,7 @@ public:
         //render using the available textures
         s.uniform_data("has_texture", 0);
         for (int i = 0; i < m_pbrMat->TEXTURE_CHANNELS; i++) {
-            m_pbrMat->GetTexture(i)->use(GL_TEXTURE0 + i);
+            m_pbrMat->GetTexture(i)->use(i);
             s.uniform_data(types[i], i); // give the correct location to each texture
         }
 
@@ -263,3 +263,5 @@ public:
 
     static Mesh generateCube();
 };
+
+using MeshPtr = std::shared_ptr<Mesh>;
