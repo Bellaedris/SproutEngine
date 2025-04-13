@@ -43,7 +43,7 @@ public:
 
     [[nodiscard]] glm::vec3 getDirection() const
     {
-        return direction;
+        return glm::normalize(direction);
     };
 
     void set_direction(float* dir) { direction = vec3(dir[0], dir[1], dir[2]); };
