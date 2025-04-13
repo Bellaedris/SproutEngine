@@ -19,7 +19,7 @@ public:
     Pass(int width, int height) : m_width(width), m_height(height) {};
 
     int textureHandle() { return m_texture.handle(); };
-    void activateTexture(int textureUnit) const { m_texture.use(textureUnit); };
+    void activateTexture(int textureUnit = 0) const { m_texture.use(textureUnit); };
 
     void blitToScreen()
     {

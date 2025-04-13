@@ -80,7 +80,7 @@ public:
     [[nodiscard]] glm::mat4 projection() const override;
 
 	[[nodiscard]] inline glm::vec3 get_position() const { return pos; };
-    [[nodiscard]] inline Frustum getFrustum() const { return m_frustum; };
+    [[nodiscard]] inline const Frustum& getFrustum() const { return m_frustum; };
 	[[nodiscard]] inline float getAspectRatio() const { return m_aspectRatio; };
 	[[nodiscard]] inline float getFov() const { return m_fov; };
 	[[nodiscard]] inline float getZnear() const { return m_zNear; };

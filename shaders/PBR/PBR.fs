@@ -21,6 +21,8 @@ uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
 uniform sampler2D brdfLUT;
 
+uniform sampler2D shadowmapTexture;
+
 struct SurfaceParameter
 {
 	vec3 albedo;
@@ -80,7 +82,7 @@ struct DirectionalLight
 uniform DirectionalLight dirLights[10];
 uniform int dirLightsNumber;
 
-vec3 calculateDirectionalLight(vec3 viewDir, SurfaceParameter surface)
+vec3 calculateDirectionalLight(vec3 viewDir, SurfaceParameter surface, float shadow)
 {
 	vec3 Lo = vec3(0.f);
 	for(int i = 0; i < dirLightsNumber; i++)
@@ -106,7 +108,7 @@ vec3 calculateDirectionalLight(vec3 viewDir, SurfaceParameter surface)
 		Kd *= 1.f - surface.metalness;
 
 		float NdotL = max(dot(surface.normal, L), 0.f);
-		Lo += (Kd * surface.albedo / M_PI + specular) * radiance * NdotL;
+		Lo += (Kd * surface.albedo / M_PI + specular) * radiance * NdotL * shadow;
 	}
 
 	return Lo;
@@ -197,22 +199,21 @@ vec3 calculatePointLight(vec3 viewDir, SurfaceParameter surface)
 //	}
 //}
 
-//float computeShadow(vec4 lightspace_pos)
-//{
-//	//gl_Position does perspective division automatically but not our out param
-//	vec3 projCoord = lightspace_pos.xyz / lightspace_pos.w;
-//
-//	projCoord = projCoord * 0.5 + 0.5; // from [-1;1] to [0;1]
-//
-//	if (projCoord.z > 1.f)
-//	return 1.f;
-//
-//	float bias = 0.005;
-//	// in the shadow if current pixel is in front of shadowmap
-//	return projCoord.z > texture(shadowmap, projCoord.xy).r + bias ? .9f : 0.f;
-//}
+float computeShadow(vec4 lightspace_pos)
+{
+	//gl_Position does perspective division automatically but not our out param
+	vec3 projCoord = lightspace_pos.xyz / lightspace_pos.w;
 
-uniform float gamma;
+	projCoord = projCoord * 0.5 + 0.5; // from [-1;1] to [0;1]
+
+	if (projCoord.z > 1.f)
+	return .9f;
+
+	// adaptative bias?
+	float bias = 0.00005;
+	// in the shadow if current pixel is in front of shadowmap
+	return projCoord.z > texture(shadowmapTexture, projCoord.xy).r + bias ? .9f : 0.f;
+}
 
 void main()
 {
@@ -253,15 +254,15 @@ void main()
 	vec3 diffuse = irradiance * albedo * ao;
 	vec3 ambiant = (kD * diffuse + specular) * ao;
 
-	//float shadow = computeShadow(lightspacePos);
+	float shadow = 1.f - computeShadow(lightspacePos);
 
 	// pack all our data in a struct
 	SurfaceParameter surface = SurfaceParameter(albedo, metalness, normal, roughness, F0);
-	vec3 finalColor = calculateDirectionalLight(viewDir, surface);
+	vec3 finalColor = calculateDirectionalLight(viewDir, surface, shadow);
 	finalColor += calculatePointLight(viewDir, surface);
 	//finalcolor += calculateSpotLight(SpotLight[0], normal, viewDir, color);
 
-	finalColor += ambiant;
+	finalColor += ambiant * shadow;
 	finalColor += emissive;
 	finalColor = finalColor / (finalColor + vec3(1.f));
 

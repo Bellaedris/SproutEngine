@@ -15,6 +15,7 @@
 #include "sprout_engine/passes/ChromaticAberrationPass.h"
 #include "sprout_engine/passes/filmGrainPass.h"
 #include "IMGUI/ImGuiFileDialog.h"
+#include "sprout_engine/passes/shadowmappingPass.h"
 
 std::string resources_path = "../../resources/";
 
@@ -73,28 +74,30 @@ public:
         playerCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
         setActiveCamera(&playerCamera);
 
-        m_entities.emplace_back(resources_path + "models/DamagedHelmet/DamagedHelmet.gltf", "helmet", false);
+        m_entities.emplace_back(resources_path + "models/Sponza/glTF/Sponza.gltf", "", false);
 
         s = Shader("PBR.vs", "PBR.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
+        s_shadowmapping = Shader("shadowmapping.vs", "shadowmapping.fs");
 
+        m_shadowPass = std::make_unique<ShadowmappingPass>(shadowmapResolution, shadowmapResolution);
         m_colorPass = std::make_unique<ForwardPass>(m_width, m_height);
         m_PPtechniques.emplace_back(std::make_unique<TonemappingPass>(m_width, m_height, "postprocess.vs", "tonemapping.fs"));
         m_PPtechniques.emplace_back(std::make_unique<ChromaticAberrationPass>(m_width, m_height, "postprocess.vs", "chromaticAberration.fs"));
         m_PPtechniques.emplace_back(std::make_unique<FilmGrainPass>(m_width, m_height, "postprocess.vs", "filmGrain.fs"));
 
-        m_pointLights =
-                {
-                        {
-                                {1., 1., 1.},
-                                {1., 1., 1., 1.},
-                        }
-                };
+//        m_pointLights =
+//                {
+//                        {
+//                                {1., 1., 1.},
+//                                {1., 1., 1., 1.},
+//                        }
+//                };
 
         m_dirLights =
                 {
                         {
-                                {5., -1., 0.},
+                                {0., -1., 3.},
                                 {1., 1., 1., 1.},
                         }
                 };
@@ -151,16 +154,25 @@ public:
             ImGui::EndMainMenuBar();
         }
 
-        m_pointLights[0].setPosition(glm::vec4(std::cosf(timeSinceStartup) * 10.f, 0.f, std::sinf(timeSinceStartup) * 10.f, 1.f));
+        //m_pointLights[0].setPosition(glm::vec4(std::cosf(timeSinceStartup) * 10.f, 0.f, std::sinf(timeSinceStartup) * 10.f, 1.f));
+
+        //depth pre-pass
+        m_shadowPass->render(m_entities, m_dirLights[0], s_shadowmapping);
 
         //draw the scene
         s.use();
-        s.uniform_data("irradianceMap", 8);
-        m_skybox.useIrradiance(8);
-        s.uniform_data("prefilterMap", 9);
-        m_skybox.usePrefilter(9);
-        s.uniform_data("brdfLUT", 10);
-        m_skybox.useBrdfLUT(10);
+        // IBL textures
+        s.uniform_data("irradianceMap", 5);
+        m_skybox.useIrradiance(5);
+        s.uniform_data("prefilterMap", 6);
+        m_skybox.usePrefilter(6);
+        s.uniform_data("brdfLUT", 7);
+        m_skybox.useBrdfLUT(7);
+
+        // shadowmapping texture
+        s.uniform_data("shadowmapTexture", 8);
+        m_shadowPass->activateTexture(8);
+
         s.uniform_data("pointLightsNumber", (int)m_pointLights.size());
         for(int i = 0; i < m_pointLights.size(); i++)
             m_pointLights[i].send_to_shader(s, i);
@@ -169,7 +181,7 @@ public:
         for(int i = 0; i < m_dirLights.size(); i++)
             m_dirLights[i].send_to_shader(s, i);
 
-        m_colorPass->render(m_entities, *mainCamera, s);
+        m_colorPass->render(m_entities, *mainCamera, m_shadowPass->m_lightspaceMatrix, s);
 
         if (drawSkybox) {
             glDepthFunc(GL_LEQUAL);
@@ -209,6 +221,15 @@ public:
 
         // general settings
         ImGui::Begin("Rendering");
+        if(ImGui::TreeNode("Shadows"))
+        {
+            if(ImGui::InputFloat("Shadowmap Resolution", &shadowmapResolution))
+                m_shadowPass->setResolution(shadowmapResolution);
+            if(ImGui::InputFloat("Shadow Zoom", &shadowZoom))
+                m_shadowPass->setOrthographicZoom(shadowZoom);
+
+            ImGui::TreePop();
+        }
         for(auto& technique : m_PPtechniques)
             technique->drawInspector(mainCamera);
         if(ImGui::Button("Reload shaders"))
@@ -282,7 +303,7 @@ public:
 
 protected:
     std::vector<Entity> m_entities;
-    Shader s, s_skybox;
+    Shader s, s_skybox, s_shadowmapping;
     Camera playerCamera;
     HDRCubemap m_skybox;
 
@@ -291,12 +312,17 @@ protected:
 
     std::vector<std::unique_ptr<PostProcessPass>> m_PPtechniques;
     std::unique_ptr<ForwardPass> m_colorPass;
+    std::unique_ptr<ShadowmappingPass> m_shadowPass;
 
     // imgui inputs
-    float gamma = 2.2f;
-    bool wireframe_mode = false;
+    //general
+    //bool wireframe_mode = false;
     bool drawSkybox = true;
     bool pickingFile = false;
+
+    // shadowmapping
+    float shadowmapResolution = 1000.f;
+    float shadowZoom = 10.f;
 
     //framerate management
     float framerate[100] = {};
