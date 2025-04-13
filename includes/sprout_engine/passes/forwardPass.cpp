@@ -19,7 +19,12 @@ ForwardPass::ForwardPass(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture.handle(), 0);
 }
 
-void ForwardPass::render(std::vector<Entity> &entities, const Camera &camera, Shader &shader)
+void ForwardPass::render(
+        std::vector<Entity> &entities,
+        const Camera &camera,
+        const glm::mat4 &lightspaceMatrix,
+        Shader &shader
+)
 {
     if(m_bIsFinal)
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -36,6 +41,7 @@ void ForwardPass::render(std::vector<Entity> &entities, const Camera &camera, Sh
     shader.uniform_data("viewMatrix", view);
     shader.uniform_data("projectionMatrix", projection);
     shader.uniform_data("inverseViewMatrix", inverseViewMatrix);
+    shader.uniform_data("lightspaceMatrix", lightspaceMatrix);
 
     for(auto& entity : entities) {
         glm::mat4 model = entity.getTransform().getModelMatrix();

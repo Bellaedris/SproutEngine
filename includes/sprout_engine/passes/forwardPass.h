@@ -13,5 +13,10 @@ protected:
     Texture m_depthTexture;
 public:
     ForwardPass(int width, int height);
-    void render(std::vector<Entity> &entities, const Camera &camera, Shader &shader) override;
+    void render(
+            std::vector<Entity> &entities,
+            const Camera &camera,
+            const glm::mat4 &lightspaceMatrix,
+            Shader &shader
+    );
 };

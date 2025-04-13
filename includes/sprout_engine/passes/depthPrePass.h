@@ -13,5 +13,5 @@ protected:
 public:
     DepthPrePass(int width, int height);
 
-    void render(std::vector<Entity> &entities, const Camera &camera, Shader& shader) override;
+    void render(std::vector<Entity> &entities, const Camera &camera, Shader& shader);
 };
