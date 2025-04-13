@@ -8,7 +8,7 @@ ResourcesManager* ResourcesManager::m_instance = nullptr;
 
 TexturePtr ResourcesManager::cacheTexture(const std::string &path, const std::string &textureName, bool useSRGB)
 {
-    // if the path is empty (no texture for this channel), return the default fallback texture
+    // if the path is empty (no texture for this channel), return the default black fallback texture
     if(textureName.empty())
         return m_defaultTexture;
 
@@ -28,7 +28,6 @@ PBRMaterialPtr ResourcesManager::cacheMaterial(
 )
 {
     auto fullName = path + name;
-    std::cout << fullName << std::endl;
 
     // cache the texture if it does not exists already
     if(m_textureCache.find(fullName) == m_textureCache.end())
@@ -48,3 +47,28 @@ ResourcesManager *ResourcesManager::GetInstance()
 
     return m_instance;
 }
+
+std::optional<PBRMaterialPtr> ResourcesManager::getMaterial(const std::string &path, const std::string &name)
+{
+    const auto res = m_materialCache.find(path + name);
+
+    if(res != m_materialCache.end())
+        return std::make_optional(res->second);
+    else
+        return {};
+}
+
+//MeshPtr ResourcesManager::cacheMesh(const std::string &path, const std::string &meshName)
+//{
+//    return MeshPtr();
+//}
+//
+//std::optional<MeshPtr> ResourcesManager::getMesh(const std::string &path, const std::string &meshName)
+//{
+//    const auto res = m_meshCache.find(path + meshName);
+//
+//    if(res != m_meshCache.end())
+//        return std::make_optional(res->second);
+//    else
+//        return {};
+//}
