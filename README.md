@@ -3,7 +3,7 @@
 The build process uses cmake and is an adaptation of [LearnOpenGL](https://github.com/JoeyDeVries/LearnOpenGL) work. 
 ## Windows build
 
-As all the required libs and headers are already in the project, just run cmake and open the generated solution (Cmake gui for windows was used in my case). Cmake may require admin privileges.
+As all the required libs and headers are already in the project, just run cmake and open the generated solution (tested with Cmake windows app/CLion). Cmake may require admin privileges.
 
 ## Linux build
 First make sure you have CMake, Git, and GCC by typing as root (sudo) `apt-get install g++ cmake git` and then get the required packages: Using root (sudo) and type `apt-get install libsoil-dev libglm-dev libassimp-dev libglew-dev libglfw3-dev libxinerama-dev libxcursor-dev  libxi-dev libfreetype-dev libgl1-mesa-dev xorg-dev` .
@@ -34,18 +34,19 @@ cmake --build build -j$(sysctl -n hw.logicalcpu)
 The project is divided into different targets, each focusing on an aspect of realtime rendering.
 ## Rasterization
 Realtime rasterization rendering. As of now, is implemented:
-- model loading and displaying, through the graphics pipeline
-- Blinn lighting model
-- Chromatic aberrations through framebuffers
+- model loading and displaying
+- PBR pipeline
+- Pass system, with multiple post processing effects
+-Shadow mapping (simple, no CSM)
+- Frustum culling
 
 In progress:
-- Frustum culling
-- Shadow mapping
+- GPU instanciation
 
 ![](resources/readme/sproutEngine.png)
 
 ## Raytracing
-Raytracing on both CPU and GPU. Implemented on the GPU side:
+Raytracing on both CPU and GPU. Implemented on the GPU side (most likely broken right now, I'm reworking my whole pipeline) :
 - Direct illumination and shadows on spheres
 - Movement though the scene (No way, realtime???)
 - Diffuse lighting with materials, emissive triangles and frame accumulation
