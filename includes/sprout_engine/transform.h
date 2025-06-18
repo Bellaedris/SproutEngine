@@ -7,6 +7,7 @@ class Transform
 {
 protected:
 	//Local space information
+    Transform* parent;
 
 	//Global space information concatenate in matrix
 	glm::mat4 m_model = glm::mat4(1.0f);

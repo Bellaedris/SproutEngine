@@ -18,7 +18,7 @@ public:
     void setResolution(int size);
     void setOrthographicZoom(float zoom);
 
-    void render(std::vector<Entity> &entities, const DirectionalLight &mainLight, Shader& shader);
+    void render(const std::unique_ptr<Entity> &rootNode, const DirectionalLight &mainLight, Shader& shader);
 
     // store the lightspace matrix computed here to be reused in the forward pass. I know, kinda ugly. Still thinking about a better solution
     glm::mat4 m_lightspaceMatrix{};

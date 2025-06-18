@@ -2,6 +2,7 @@
 // Created by Bellaedris on 30/03/2025.
 //
 
+#include <queue>
 #include "shadowmappingPass.h"
 
 ShadowmappingPass::ShadowmappingPass(int width, int height)
@@ -16,7 +17,7 @@ ShadowmappingPass::ShadowmappingPass(int width, int height)
     glReadBuffer(GL_NONE);
 }
 
-void ShadowmappingPass::render(std::vector<Entity> &entities, const DirectionalLight &mainLight, Shader &shader)
+void ShadowmappingPass::render(const std::unique_ptr<Entity> &rootNode, const DirectionalLight &mainLight, Shader &shader)
 {
     //draw the scene from the light pov
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer);
@@ -29,14 +30,23 @@ void ShadowmappingPass::render(std::vector<Entity> &entities, const DirectionalL
     glm::mat4 light_view = glm::lookAt({0, 10, 0}, mainLight.getDirection(), {0, 1, 0});
     glm::mat4 light_projection = glm::ortho(-m_orthographicZoom, m_orthographicZoom, -m_orthographicZoom, m_orthographicZoom, .1f, 1000.f);
 
-    m_lightspaceMatrix = light_projection * light_view;
+    shader.use();
+    shader.uniform_data("viewMatrix", light_view);
+    shader.uniform_data("projectionMatrix", light_projection);
 
-    for(auto& entity : entities)
+    std::queue<Entity*> queue;
+    queue.push(rootNode.get());
+    while(!queue.empty())
     {
-        shader.use();
-        shader.uniform_data("mvpMatrix", m_lightspaceMatrix * entity.getTransform().getModelMatrix());
+        Entity* current = queue.front();
+        std::vector<std::shared_ptr<Entity>>& currentChildren = current->GetChildren();
+        for (auto& entity: currentChildren)
+        {
+            shader.uniform_data("modelMatrix", entity->getTransform().getModelMatrix());
 
-        entity.draw(shader);
+            entity->draw(shader);
+        }
+        queue.pop();
     }
 }
 

@@ -7,8 +7,8 @@
 #include "PBRMaterial.h"
 #include "resourcesManager.h"
 
-void Model::processNode(const aiNode *node, const aiScene *scene) {
-
+void Model::processNode(const aiNode *node, const aiScene *scene)
+{
     for (int i = 0; i < node->mNumMeshes; i++)
     {
         meshes.push_back(

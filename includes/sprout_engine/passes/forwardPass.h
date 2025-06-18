@@ -14,7 +14,7 @@ protected:
 public:
     ForwardPass(int width, int height);
     void render(
-            std::vector<Entity> &entities,
+            const std::unique_ptr<Entity> &rootNode,
             const Camera &camera,
             const glm::mat4 &lightspaceMatrix,
             Shader &shader
