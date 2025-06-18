@@ -9,8 +9,6 @@
 class TonemappingPass : public PostProcessPass
 {
 protected:
-    Mesh m_renderQuad;
-
     float gamma{2.2f};
     float exposure{1.f};
     int technique{1};

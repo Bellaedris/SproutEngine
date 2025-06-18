@@ -10,7 +10,6 @@
 class ChromaticAberrationPass : public PostProcessPass
 {
 protected:
-    Mesh m_renderQuad;
     float strength{1.f};
     bool fadeFromCenter{true};
 

@@ -7,13 +7,6 @@
 TonemappingPass::TonemappingPass(int width, int height, const char* vertShader, const char* fragShader)
     : PostProcessPass(width, height, vertShader, fragShader)
 {
-    glGenFramebuffers(1, &m_framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
-
-    m_texture = Texture(width, height, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture.handle(), 0);
-
-    m_renderQuad = Mesh::generatePlane();
 }
 
 void TonemappingPass::render(Pass* input) {
@@ -24,19 +17,7 @@ void TonemappingPass::render(Pass* input) {
     input->activateTexture();
     shader.uniform_data("frame", 0);
 
-    if(m_bIsFinal)
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    else
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer);
-
-    glDisable(GL_DEPTH_TEST);
-
-    m_renderQuad.draw_strip();
-
-    glEnable(GL_DEPTH_TEST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    m_bIsFinal = false;
+    bindAndDrawEffect();
 }
 
 const char* tonemappingTechniques[] = {"Reinhardt", "ACES", "Filmic"};

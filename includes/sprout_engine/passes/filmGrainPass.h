@@ -10,7 +10,6 @@
 class FilmGrainPass : public PostProcessPass
 {
 protected:
-    Mesh m_renderQuad;
     float strength{.25f};
 
 public:
