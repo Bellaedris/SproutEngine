@@ -264,7 +264,6 @@ void main()
 
 	finalColor += ambiant * shadow;
 	finalColor += emissive;
-	finalColor = finalColor / (finalColor + vec3(1.f));
 
 	FragColor = vec4(finalColor, alpha);
 }
