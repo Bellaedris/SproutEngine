@@ -138,10 +138,10 @@ public:
 
 		glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, format_type, NULL);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, clamp_method);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, clamp_method);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, filtering_method);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, filtering_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_method);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp_method);
         if (clamp_method == GL_CLAMP_TO_BORDER)
         {
             float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -260,9 +260,9 @@ public:
 
 	inline unsigned int handle() const { return id; };
 
-	void use(const int texture_unit = 0) const
+	void use(const int textureUnit = 0) const
 	{
-		glActiveTexture(GL_TEXTURE0 + texture_unit);
+		glActiveTexture(GL_TEXTURE0 + textureUnit);
 		glBindTexture(GL_TEXTURE_2D, id);
 	};
 
