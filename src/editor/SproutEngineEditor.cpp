@@ -16,6 +16,7 @@
 #include "sprout_engine/passes/filmGrainPass.h"
 #include "IMGUI/ImGuiFileDialog.h"
 #include "sprout_engine/passes/shadowmappingPass.h"
+#include "sprout_engine/passes/bloomPass.h"
 
 std::string resources_path = "../../resources/";
 
@@ -26,7 +27,7 @@ const ImVec2 uv_max = ImVec2(1.0f, 0.0f);
 class SproutEngineEditor : public SproutApp
 {
 public:
-    SproutEngineEditor() : SproutApp(1366, 768, 4, 6) {}
+    SproutEngineEditor() : SproutApp(1360, 768, 4, 6) {}
 
     void loadAsset()
     {
@@ -47,7 +48,7 @@ public:
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
                 std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
                 // action
-                m_entities.emplace_back(filePathName, "");
+                m_sceneRoot->AddChild(filePathName, "");
                 pickingFile = false;
             }
 
@@ -74,7 +75,7 @@ public:
         playerCamera = Camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 1.f, 0.f), 0., -90., 0.1f, 1000.f, fov, 16.f / 9.f);
         setActiveCamera(&playerCamera);
 
-        m_entities.emplace_back(resources_path + "models/Sponza/glTF/Sponza.gltf", "", false);
+        //m_entities.emplace_back(resources_path + "models/Sponza/glTF/Sponza.gltf", "", false);
 
         s = Shader("PBR.vs", "PBR.fs");
         s_skybox = Shader("skybox.vs", "skybox.fs");
@@ -82,17 +83,18 @@ public:
 
         m_shadowPass = std::make_unique<ShadowmappingPass>(shadowmapResolution, shadowmapResolution);
         m_colorPass = std::make_unique<ForwardPass>(m_width, m_height);
+        m_PPtechniques.emplace_back(std::make_unique<BloomPass>(m_width, m_height, "postprocess.vs", "bloom.fs", "postprocess.vs", "brightPass.fs", "gaussianBlur.fs"));
         m_PPtechniques.emplace_back(std::make_unique<TonemappingPass>(m_width, m_height, "postprocess.vs", "tonemapping.fs"));
         m_PPtechniques.emplace_back(std::make_unique<ChromaticAberrationPass>(m_width, m_height, "postprocess.vs", "chromaticAberration.fs"));
         m_PPtechniques.emplace_back(std::make_unique<FilmGrainPass>(m_width, m_height, "postprocess.vs", "filmGrain.fs"));
 
-//        m_pointLights =
-//                {
-//                        {
-//                                {1., 1., 1.},
-//                                {1., 1., 1., 1.},
-//                        }
-//                };
+        m_pointLights =
+                {
+                        {
+                                {1., 1., 1.},
+                                {1., 1., 1., 1.},
+                        }
+                };
 
         m_dirLights =
                 {
@@ -157,7 +159,7 @@ public:
         //m_pointLights[0].setPosition(glm::vec4(std::cosf(timeSinceStartup) * 10.f, 0.f, std::sinf(timeSinceStartup) * 10.f, 1.f));
 
         //depth pre-pass
-        m_shadowPass->render(m_entities, m_dirLights[0], s_shadowmapping);
+        m_shadowPass->render(m_sceneRoot, m_dirLights[0], s_shadowmapping);
 
         //draw the scene
         s.use();
@@ -181,7 +183,7 @@ public:
         for(int i = 0; i < m_dirLights.size(); i++)
             m_dirLights[i].send_to_shader(s, i);
 
-        m_colorPass->render(m_entities, *mainCamera, m_shadowPass->m_lightspaceMatrix, s);
+        m_colorPass->render(m_sceneRoot, *mainCamera, m_shadowPass->m_lightspaceMatrix, s);
 
         if (drawSkybox) {
             glDepthFunc(GL_LEQUAL);
@@ -239,23 +241,29 @@ public:
         }
         ImGui::End();
 
+        ImGui::Begin("Hierarchy");
+        m_sceneRoot->drawHierarchy(m_selectedEntity);
+        ImGui::End();
+
+        ImGui::Begin("Light");
+        for(int i = 0; i < m_dirLights.size(); i++)
+        {
+            ImGui::PushID(i);
+            m_dirLights[i].drawInspector(mainCamera);
+            ImGui::PopID();
+        }
+        for(int i = 0; i < m_pointLights.size(); i++)
+        {
+            ImGui::PushID(i);
+            m_pointLights[i].drawInspector(mainCamera);
+            ImGui::PopID();
+        }
+        ImGui::End();
+
         ImGui::Begin("Inspector");
             ImGuiIO& io = ImGui::GetIO();
             ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-            for(auto& entity : m_entities)
-                entity.drawInspector(mainCamera);
-            for(int i = 0; i < m_dirLights.size(); i++)
-            {
-                ImGui::PushID(i);
-                m_dirLights[i].drawInspector(mainCamera);
-                ImGui::PopID();
-            }
-            for(int i = 0; i < m_pointLights.size(); i++)
-            {
-                ImGui::PushID(i);
-                m_pointLights[i].drawInspector(mainCamera);
-                ImGui::PopID();
-            }
+            m_selectedEntity.drawInspector(mainCamera);
             if(pickingFile)
             {
                 loadAsset();
@@ -302,7 +310,8 @@ public:
     }
 
 protected:
-    std::vector<Entity> m_entities;
+    std::unique_ptr<Entity> m_sceneRoot {std::make_unique<Entity>()};
+    Entity m_selectedEntity {};
     Shader s, s_skybox, s_shadowmapping;
     Camera playerCamera;
     HDRCubemap m_skybox;
