@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "pass.h"
+#include "sprout_engine/passes/pass.h"
 
 class PostProcessPass : public Pass, public Inspectable
 {
