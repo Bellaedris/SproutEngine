@@ -47,6 +47,7 @@ public:
         m_bIsFinal = false;
     }
 
+    virtual void sendCameraData(const Camera &cam) {};
     virtual void render(Pass* input) = 0;
     void drawInspector(Camera *camera) override = 0;
 };
