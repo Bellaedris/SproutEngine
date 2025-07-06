@@ -225,6 +225,9 @@ public:
 
     void draw_strip();
 
+    /// \brief Quick workaround to draw without actually needing material or anything from the PBR pipeline
+    void drawNonPBR();
+
 	void draw(Shader &s, const Frustum &frustum, const Transform& transform)
 	{
 		//check if the aabb is visible (inside the frustum)

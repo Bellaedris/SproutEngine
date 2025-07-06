@@ -174,3 +174,13 @@ void Mesh::build_buffer() {
 
     update_data = false;
 }
+
+void Mesh::drawNonPBR()
+{
+    if(update_data)
+        build_buffer();
+
+    glBindVertexArray(vao);
+    glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+}
