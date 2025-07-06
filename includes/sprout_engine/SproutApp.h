@@ -23,9 +23,12 @@ protected:
 
     int m_width, m_height;
 
+    // deltas and framerate
 	float delta_time;
 	float last_frame;
 	float timeSinceStartup;
+    float framerate[100] = {};
+    int values_offset = 0;
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 	std::chrono::high_resolution_clock::time_point frame_begin;

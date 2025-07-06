@@ -40,6 +40,7 @@ SproutApp::SproutApp(int width, int height, int major, int minor)
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     start_time = std::chrono::high_resolution_clock::now();
 }
@@ -71,6 +72,11 @@ void SproutApp::prerender() {
     }
     else
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    // init ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 }
 
 int SproutApp::run() {
@@ -101,10 +107,35 @@ int SproutApp::run() {
         if (render() < 0)
             break;
 
+        ImGui::Begin("Performances", nullptr,  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
+        ImGui::Text("SproutEngine version 0.0.1");
+        ImGui::Text("OpenGL%s", api);
+        ImGui::Text("%s %s", vendor, gpu);
+
+        float average = 0.0f;
+        for(float n : framerate)
+            average += n;
+        average /= (float)IM_ARRAYSIZE(framerate);
+        ImGui::Text("Average %02fFPS", average);
+
+        int milli = (int) (gpu_last_frame / 1000000);
+        int micro = (int) ((gpu_last_frame / 1000) % 1000);
+        ImGui::Text(
+                "cpu %03dms\ngpu %02dms % 03dus",
+                cpu_last_frame,
+                milli, micro
+        );
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         frame_end = std::chrono::high_resolution_clock::now();
         cpu_last_frame = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_begin).count();
         glEndQuery(GL_TIME_ELAPSED);
         glGetQueryObjecti64v(frame_time_gpu, GL_QUERY_RESULT, &gpu_last_frame); // should be changed, synchronizes GPU with CPU...
+        framerate[values_offset] = 1.f / delta_time;
+        values_offset = (values_offset + 1) % IM_ARRAYSIZE(framerate);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
