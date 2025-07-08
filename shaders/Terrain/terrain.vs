@@ -22,5 +22,6 @@ void main()
 	texCoord = uv;
 	worldPosition = modelMatrix * vec4(pos, 1.f);
 	cameraPos = inverseViewMatrix * vec4(0.f, 0.f, 0.f, 1.f);
+	norm = normal;
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(pos, 1.f);
 }
