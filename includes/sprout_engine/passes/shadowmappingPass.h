@@ -14,6 +14,7 @@ protected:
 
 public:
     ShadowmappingPass(int width, int height);
+    void BuildTextures() override;
 
     void setResolution(int size);
     void setOrthographicZoom(float zoom);

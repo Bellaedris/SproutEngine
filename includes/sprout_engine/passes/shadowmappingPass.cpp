@@ -66,3 +66,9 @@ void ShadowmappingPass::setOrthographicZoom(float zoom)
 {
     m_orthographicZoom = zoom;
 }
+
+void ShadowmappingPass::BuildTextures()
+{
+    m_texture = Texture::buildDepthTexture(m_width, m_height);
+    glNamedFramebufferTexture(m_framebuffer, GL_DEPTH_ATTACHMENT, m_texture.handle(), 0);
+}

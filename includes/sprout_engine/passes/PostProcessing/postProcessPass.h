@@ -26,16 +26,19 @@ public:
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture.handle(), 0);
     };
 
+    void BuildTextures() override
+    {
+        m_texture = Texture(m_width, m_height, GL_RGBA32F, GL_RGBA, GL_FLOAT);
+        glNamedFramebufferTexture(m_framebuffer, GL_COLOR_ATTACHMENT0, m_texture.handle(), 0);
+    }
+
     /**
      * \brief Binds either the screen framebuffer or the PP framebuffer, depending on if this post processing effect is
      * the last of the PP chain, then draw the rectangle
      */
     void bindAndDrawEffect()
     {
-        if(m_bIsFinal)
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        else
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer);
 
         glDisable(GL_DEPTH_TEST);
 
@@ -44,7 +47,6 @@ public:
         glEnable(GL_DEPTH_TEST);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        m_bIsFinal = false;
     }
 
     virtual void sendCameraData(const Camera &cam) {};

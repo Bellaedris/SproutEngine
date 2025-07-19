@@ -13,6 +13,8 @@ protected:
     Texture m_depthTexture;
 public:
     ForwardPass(int width, int height);
+    void BuildTextures() override;
+
     void render(
             const std::unique_ptr<Entity> &rootNode,
             const Camera &camera,

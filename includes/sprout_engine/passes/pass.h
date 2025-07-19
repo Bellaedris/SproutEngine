@@ -14,12 +14,12 @@ protected:
     int m_width, m_height;
 
 public:
-    bool m_bIsFinal{};
-
     Pass(int width, int height) : m_width(width), m_height(height) {};
+    virtual void BuildTextures() = 0;
 
     int textureHandle() { return m_texture.handle(); };
     void activateTexture(int textureUnit = 0) const { m_texture.use(textureUnit); };
+    void updateRenderSize( int width, int height) { m_width = width; m_height = height; BuildTextures();};
 
     void blitToScreen()
     {

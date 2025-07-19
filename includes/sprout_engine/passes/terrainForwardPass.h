@@ -16,4 +16,5 @@ public:
 
     Texture& getDepthTexture() { return m_depthTexture; };
     void useDepthTexture(int unit = 0);
+    void BuildTextures() override;
 };
