@@ -127,10 +127,12 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering_method);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, data.width(), data.height(), 0, GL_RGBA, GL_FLOAT, data.data());
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, data.width(), data.height(), 0, GL_RGBA, GL_FLOAT, data.data());
 		glGenerateMipmap(GL_TEXTURE_2D);
 	};
 
+    // TODO constructor that takes a struct as input that has a lot of default values that we could just edit when necessary
+    // for instance, to not generate mipmaps
 	Texture(const int width, const int height, GLenum internal_format, GLenum format = GL_RGBA, GLenum format_type = GL_UNSIGNED_BYTE, std::string type = "texture_diffuse", GLenum clamp_method = GL_REPEAT, GLenum filtering_method = GL_LINEAR) : type(type), path("empty")
 	{
 		glGenTextures(1, &id);
