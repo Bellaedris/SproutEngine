@@ -80,6 +80,7 @@ void SproutApp::prerender() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 }
 
 int SproutApp::run() {

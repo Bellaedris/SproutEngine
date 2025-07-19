@@ -10,13 +10,13 @@
 
 #include <vector>
 #include "sprout_engine/passes/forwardPass.h"
-#include "sprout_engine/passes/tonemappingPass.h"
+#include "sprout_engine/passes/PostProcessing/tonemappingPass.h"
 #include "sprout_engine/buffer.h"
-#include "sprout_engine/passes/ChromaticAberrationPass.h"
-#include "sprout_engine/passes/filmGrainPass.h"
+#include "sprout_engine/passes/PostProcessing/ChromaticAberrationPass.h"
+#include "sprout_engine/passes/PostProcessing/filmGrainPass.h"
 #include "IMGUI/ImGuiFileDialog.h"
 #include "sprout_engine/passes/shadowmappingPass.h"
-#include "sprout_engine/passes/bloomPass.h"
+#include "sprout_engine/passes/PostProcessing/bloomPass.h"
 
 std::string resources_path = "../../resources/";
 
@@ -27,7 +27,28 @@ const ImVec2 uv_max = ImVec2(1.0f, 0.0f);
 class SproutEngineEditor : public SproutApp
 {
 public:
-    SproutEngineEditor() : SproutApp(1360, 768, 4, 6) {}
+    SproutEngineEditor() : SproutApp(1360, 768, 4, 6), viewportWidth(1360), viewportHeight(768) {}
+
+    // TODO move to SproutApp
+    void TryUpdateRenderSize()
+    {
+        timeSinceLastFrameResize += delta_time;
+        if((viewportWidth != previousFrameSize.x || viewportHeight != previousFrameSize.y) && timeSinceLastFrameResize > DELTA_BETWEEN_VIEWPORT_RESIZE)
+        {
+            // only resize every fixed time to not resize the viewport too often, killing performances
+            timeSinceLastFrameResize -= DELTA_BETWEEN_VIEWPORT_RESIZE;
+
+            viewportWidth = previousFrameSize.x;
+            viewportHeight = previousFrameSize.y;
+
+            mainCamera->setAspectRatio(viewportWidth / viewportHeight);
+
+            m_colorPass->updateRenderSize(viewportWidth, viewportHeight);
+
+            for(auto& technique : m_PPtechniques)
+                technique->updateRenderSize(viewportWidth, viewportHeight);
+        }
+    }
 
     void loadAsset()
     {
@@ -81,9 +102,10 @@ public:
         s_skybox = Shader("skybox.vs", "skybox.fs");
         s_shadowmapping = Shader("shadowmapping.vs", "shadowmapping.fs");
 
+        BloomPass bloom = BloomPass(m_width, m_height, "postprocess.vs", "bloom_composite.fs");
         m_shadowPass = std::make_unique<ShadowmappingPass>(shadowmapResolution, shadowmapResolution);
         m_colorPass = std::make_unique<ForwardPass>(m_width, m_height);
-        m_PPtechniques.emplace_back(std::make_unique<BloomPass>(m_width, m_height, "postprocess.vs", "bloom.fs", "postprocess.vs", "brightPass.fs", "gaussianBlur.fs"));
+        m_PPtechniques.emplace_back(std::make_unique<BloomPass>(m_width, m_height, "postprocess.vs", "bloom_composite.fs"));
         m_PPtechniques.emplace_back(std::make_unique<TonemappingPass>(m_width, m_height, "postprocess.vs", "tonemapping.fs"));
         m_PPtechniques.emplace_back(std::make_unique<ChromaticAberrationPass>(m_width, m_height, "postprocess.vs", "chromaticAberration.fs"));
         m_PPtechniques.emplace_back(std::make_unique<FilmGrainPass>(m_width, m_height, "postprocess.vs", "filmGrain.fs"));
@@ -106,14 +128,12 @@ public:
 
         m_skybox = HDRCubemap(std::string(resources_path + "textures/skyboxes/lilienstein_4k.hdr").c_str());
 
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-        glEnable(GL_DEPTH_TEST);
-
         return 0;
     }
 
     int render() override {
+        TryUpdateRenderSize();
+
         glEnable(GL_DEPTH_TEST);
         glClearColor(.1f, .1f, .1f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -121,12 +141,8 @@ public:
         glViewport(0, 0, m_width, m_height);
 
         // IMGUI
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        ImGuizmo::BeginFrame();
-
         // menu at the top of the window
+
         if(ImGui::BeginMainMenuBar())
         {
             if (ImGui::BeginMenu("File"))
@@ -196,30 +212,15 @@ public:
         }
         Pass* lastTechnique = m_colorPass.get();
 
-        // Post process
-        // first, set the last active technique as final
-        bool hasActivePostProcess{};
-        for(int i = m_PPtechniques.size() - 1; i >= 0; i--)
-        {
-            if(m_PPtechniques[i]->isActive)
-            {
-                m_PPtechniques[i]->m_bIsFinal = true;
-                hasActivePostProcess = true;
-                break;
-            }
-        }
-
         // then apply post processing, or just the color pass if no technique is active
-        if(!hasActivePostProcess)
-            m_colorPass->blitToScreen();
-        else
-            for(const auto& technique : m_PPtechniques)
+        for(const auto& technique : m_PPtechniques)
+        {
+            if(technique->isActive)
             {
-                if(!technique->isActive)
-                    continue;
                 technique->render(lastTechnique);
                 lastTechnique = technique.get();
             }
+        }
 
         // general settings
         ImGui::Begin("Rendering");
@@ -270,32 +271,10 @@ public:
             }
         ImGui::End();
 
-        ImGui::Begin("Performances", nullptr,  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
-            ImGui::Text("SproutEngine version 0.0.1");
-            ImGui::Text("OpenGL%s", api);
-            ImGui::Text("%s %s", vendor, gpu);
-
-            float average = 0.0f;
-            for(float n : framerate)
-                average += n;
-            average /= (float)IM_ARRAYSIZE(framerate);
-            ImGui::Text("Average %02fFPS", average);
-
-            int milli = (int) (gpu_last_frame / 1000000);
-            int micro = (int) ((gpu_last_frame / 1000) % 1000);
-            ImGui::Text(
-                    "cpu %03dms\ngpu %02dms % 03dus",
-                    cpu_last_frame,
-                    milli, micro
-            );
+        ImGui::Begin("Viewport");
+            previousFrameSize = ImGui::GetContentRegionAvail();
+            ImGui::Image((ImTextureID)(intptr_t)lastTechnique->textureHandle(), previousFrameSize, {0, 1}, {1, 0});
         ImGui::End();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // update framerate
-        framerate[values_offset] = 1.f / delta_time;
-        values_offset = (values_offset + 1) % IM_ARRAYSIZE(framerate);
 
         return 0;
     }
@@ -328,14 +307,15 @@ protected:
     //bool wireframe_mode = false;
     bool drawSkybox = true;
     bool pickingFile = false;
+    ImVec2 previousFrameSize {0, 0};
+    float viewportWidth;
+    float viewportHeight;
+    float timeSinceLastFrameResize{0.f};
+    const float DELTA_BETWEEN_VIEWPORT_RESIZE = 1.f;
 
     // shadowmapping
     float shadowmapResolution = 1000.f;
     float shadowZoom = 10.f;
-
-    //framerate management
-    float framerate[100] = {};
-    int values_offset = 0;
 };
 
 int main()
