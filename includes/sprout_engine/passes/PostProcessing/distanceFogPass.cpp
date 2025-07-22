@@ -4,9 +4,9 @@
 
 #include "distanceFogPass.h"
 
-DistanceFogPass::DistanceFogPass(int width, int height, const char *vert, const char *frag, const Texture &depthTexture)
+DistanceFogPass::DistanceFogPass(int width, int height, const char *vert, const char *frag, TerrainForwardPass* forwardPass)
         : PostProcessPass(width, height, vert, frag)
-          , depthTexture(depthTexture)
+        , forwardPass(forwardPass)
 {
 
 }
@@ -17,7 +17,7 @@ void DistanceFogPass::render(Pass *input)
     shader.use();
     input->activateTexture();
     shader.uniform_data("framebuffer", 0);
-    depthTexture.use(1);
+    forwardPass->useDepthTexture(1);
     shader.uniform_data("depthTexture", 1);
 
     shader.uniform_data("maxFogDistance", maxFogDistance);
@@ -31,6 +31,7 @@ void DistanceFogPass::drawInspector(Camera *camera)
 {
     if(ImGui::TreeNode("Distance Fog"))
     {
+        ImGui::Checkbox("Enabled", &isActive);
         ImGui::InputFloat("Max Distance", &maxFogDistance, .1f, 1.f);
         ImGui::InputFloat("Density", &fogDensity, .1f, 1.f);
         ImGui::ColorPicker4("fogColor", glm::value_ptr(fogColor));

@@ -5,17 +5,18 @@
 #pragma once
 
 #include "postProcessPass.h"
+#include "sprout_engine/passes/terrainForwardPass.h"
 
 class DistanceFogPass : public PostProcessPass
 {
 protected:
-    Texture depthTexture;
+    TerrainForwardPass* forwardPass;
     float maxFogDistance{50.f};
     float fogDensity{.5f};
     Color fogColor{.7f, .7f, .7f, 1.f};
 
 public:
-    DistanceFogPass(int width, int height, const char* vert, const char* frag, const Texture& depthTexture);
+    DistanceFogPass(int width, int height, const char* vert, const char* frag, TerrainForwardPass* forwardPass);
 
     void sendCameraData(const Camera& cam) override;
 

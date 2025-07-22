@@ -36,6 +36,8 @@ void main() {
     float fogFactor = 4.f * camToPixel / maxFogDistance;
     fogFactor = exp(-fogFactor * fogDensity * fogFactor * fogDensity);
 
+    // clamp the fog to still have a bit of color appearing
+    fogFactor = clamp(fogFactor, 0.05f, 1.f);
     vec3 color = mix(fogColor.xyz, inputColor, fogFactor);
 
     FragColor = vec4(color, 1.f);
