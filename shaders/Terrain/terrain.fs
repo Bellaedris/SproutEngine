@@ -49,7 +49,7 @@ vec3 bilinear(sampler2D tex, vec2 uv)
 void main()
 {
 	vec3 color = texture(color_map, texCoord).xyz;
-	vec3 sunDir = normalize(sun_dir);
+	vec3 sunDir = normalize(-sun_dir);
 
 	float bias = 0.001f;
 	vec3 pos = worldPosition.xyz;
