@@ -19,10 +19,10 @@ cmake ..
 cmake --build .
 ```
 
-Mac OS X building
+Mac OS building
 
 ## MacOS build
-Building on Mac OS X is fairly simple:
+Building on Mac OS should be fairly simple, but i can't check that it works since I do not own a MacOS device:
 
 ```
 brew install cmake assimp glm glfw freetype
@@ -37,21 +37,18 @@ Realtime rasterization rendering. As of now, is implemented:
 - model loading and displaying
 - PBR pipeline
 - Pass system, with multiple post processing effects
--Shadow mapping (simple, no CSM)
+- Shadow mapping (simple, no CSM)
 - Frustum culling
+- Editor window
 
-In progress:
-- GPU instanciation
-
-![](resources/readme/sproutEngine.png)
+![](resources/readme/SproutEngine.png)
+![](resources/readme/SproutEngine_Editor.png)
 
 ## Raytracing
 Raytracing on both CPU and GPU. Implemented on the GPU side (most likely broken right now, I'm reworking my whole pipeline) :
-- Direct illumination and shadows on spheres
-- Movement though the scene (No way, realtime???)
+- Movement though the scene
 - Diffuse lighting with materials, emissive triangles and frame accumulation
 
-![](resources/readme/GPU%20sphere.webp)
 ![](resources/readme/diffuse%20render.jpg)
 
 On the CPU side:
